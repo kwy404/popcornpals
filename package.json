@@ -1,0 +1,52 @@
+{
+  "name": "popcornpals",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A serverless watch party: watch the same video in sync with friends, peer to peer, with voice and chat.",
+  "keywords": [
+    "watch party",
+    "peer to peer",
+    "webrtc",
+    "video sync",
+    "voice chat",
+    "pwa"
+  ],
+  "homepage": "https://kwy404.github.io/popcornpals/",
+  "bugs": {
+    "url": "https://github.com/kwy404/popcornpals/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kwy404/popcornpals.git"
+  },
+  "license": "MIT",
+  "author": "Alexandre Kohler (https://github.com/kwy404)",
+  "type": "module",
+  "engines": {
+    "node": ">=18.18"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "rules": "node scripts/check-rules.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "core": "node scripts/sync-core.mjs",
+    "core:check": "node scripts/sync-core.mjs --check",
+    "links": "node scripts/check-links.mjs",
+    "video": "node scripts/make-test-video.mjs",
+    "e2e": "node test/e2e.mjs",
+    "qa": "node scripts/qa.mjs",
+    "serve": "node scripts/serve.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@scure/bip39": "^2.4.0",
+    "eslint": "^9.39.5",
+    "globals": "^16.5.0",
+    "jsqr": "^1.4.0",
+    "monsooncss": "0.2.0",
+    "playwright-core": "^1.64.1",
+    "vitest": "^3.2.7",
+    "voodoojs": "1.0.0"
+  }
+}
