@@ -119,7 +119,7 @@
   </header>
 
   <main class="room-main" id="main">
-    <section class="theater" :aria-label="t('stage.label')">
+    <section class="theater" :aria-label="t('stage.label')" aria-describedby="ctx-hint">
       <div class="screen-frame" :class="{ 'has-media': S.media.kind, 'is-screen': S.media.kind === 'screen' }">
         <!-- Players live here; the app drives them directly -->
         <div class="stage" id="stage" v-ignore>
@@ -266,7 +266,7 @@
       <section class="panel chat-panel" role="tabpanel" aria-labelledby="tab-chat" v-show="S.tab === 'chat'">
         <ol class="chat-list" id="chat-list" aria-live="polite">
           <li class="chat-empty muted" v-if="!S.chat.length">{ t('chat.empty') }</li>
-          <li class="chat-msg" v-for="m in S.chat" :key="m.id" :class="{ mine: m.mine }" :data-id="m.id">
+          <li class="chat-msg" v-for="m in S.chat" :key="m.id" :class="{ mine: m.mine }" :data-id="m.id" tabindex="0" aria-describedby="ctx-hint">
             <div class="chat-head"><span class="dot" :style="{ background: m.color }" aria-hidden="true"></span><strong>{ m.name }</strong>
               <button type="button" class="vt-chip" v-if="m.vt !== null" @click="S.seekToTime(m.vt)" :title="t('chat.timeTitle', { t: m.vtLabel })" :aria-label="t('chat.timeTitle', { t: m.vtLabel })"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-clock"/></svg>{ m.vtLabel }</button>
               <time class="muted">{ m.time }</time>
@@ -315,13 +315,13 @@
       <!-- Who is watching -->
       <section class="panel people-panel" role="tabpanel" aria-labelledby="tab-people" v-show="S.tab === 'people'">
         <ul class="people-list" id="people-list">
-          <li class="person" v-for="p in S.people" :key="p.id" :data-id="p.id" :class="{ speaking: p.speaking, offline: !p.online }">
+          <li class="person" v-for="p in S.people" :key="p.id" :data-id="p.id" :class="{ speaking: p.speaking, offline: !p.online, 'local-muted': p.localMuted }" tabindex="0" aria-describedby="ctx-hint">
             <span class="avatar-ring" :style="{ '--c': p.color }"><span class="initials">{ p.initials }</span></span>
             <span class="p-body">
               <span class="p-name">{ p.name }<span class="muted" v-if="p.me"> { t('people.you') }</span>
                 <span class="host-badge" v-if="p.host" :title="t('people.host')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-crown"/></svg>{ t('people.host') }</span>
               </span>
-              <span class="p-status muted small">{ p.statusText }</span>
+              <span class="p-status muted small">{ p.statusText }<span v-if="p.localMuted">, { t('ctx.mutedForYou') }</span></span>
             </span>
             <span class="p-mic" :title="p.micText"><svg class="ic" aria-hidden="true" v-show="p.mic && !p.muted"><use href="icons.svg#i-mic"/></svg><svg class="ic muted" aria-hidden="true" v-show="!p.mic || p.muted"><use href="icons.svg#i-mic-off"/></svg></span>
           </li>
@@ -553,6 +553,7 @@
 <input type="file" id="file-input" accept="video/*,audio/*,.mkv,.webm,.mp4,.m4v,.mov" hidden>
 <input type="file" id="subs-input" accept=".srt,.vtt,text/vtt" hidden>
 <div id="audio-sink" hidden v-ignore></div>
+<p id="ctx-hint" class="sr-only">{ t('ctx.hint') }</p>
 <datalist id="bip39"></datalist>
 <noscript><p class="noscript">popcornpals needs JavaScript: everything runs in your browser.</p></noscript>
 </body>

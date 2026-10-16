@@ -107,6 +107,29 @@ export class Mesh extends Emitter {
     return this.relay === this.self.id;
   }
 
+  /**
+   * The relay hands its role to another online member it is linked to. The
+   * member moves first in the joining order on every device, so the same
+   * election rule keeps choosing it, also after someone leaves. Returns false
+   * when this device is not the relay or the member is not reachable.
+   */
+  handover(id) {
+    if (this.closed || !this.isRelay || id === this.self.id || !this.links.has(id) || !this.members.get(id)?.online) return false;
+    const first = Math.min(...[...this.members.values()].map((m) => m.joinedAt).filter(Number.isFinite));
+    const joinedAt = first - 1;
+    for (const link of this.links.values()) this._send(link, { t: 'handover', id, joinedAt });
+    this._applyHandover(id, joinedAt);
+    return true;
+  }
+
+  _applyHandover(id, joinedAt) {
+    const m = this.members.get(id);
+    if (!m || !Number.isFinite(joinedAt)) return;
+    m.joinedAt = joinedAt;
+    this._elect();
+    this.emit('members', this.memberList());
+  }
+
   /** Members as plain objects, sorted by join time. */
   memberList() {
     return [...this.members.values()].map(publicMember).sort((a, b) => (a.joinedAt ?? Infinity) - (b.joinedAt ?? Infinity) || (a.id < b.id ? -1 : 1));
@@ -451,6 +474,10 @@ export class Mesh extends Emitter {
       }
       case 'links':
         this.peerLinks.set(from, new Set(msg.ids || []));
+        return;
+      case 'handover':
+        // Only the relay may hand its role over.
+        if (from === this.relay && typeof msg.id === 'string' && this.members.has(msg.id)) this._applyHandover(msg.id, Number(msg.joinedAt));
         return;
       case 'relay':
         if ((this.members.get(msg.id)?.online || msg.id === from) && this.relay !== msg.id) {

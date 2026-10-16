@@ -76,8 +76,34 @@ try {
       }
     }
   }
+  // The landing page shows every section with reduced motion too, and after
+  // the opening the curtains are open with motion on.
+  for (const motion of ['reduce', 'no-preference']) {
+    await page.emulateMedia({ colorScheme: 'dark', reducedMotion: motion });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    current = 'landing';
+    await page.goto(base);
+    await page.waitForTimeout(motion === 'reduce' ? 500 : 3800);
+    const r = await page.evaluate(() => {
+      const stage = document.querySelector('.cinema .stage');
+      const frames = [...document.querySelectorAll('.strip .frame')];
+      const hero = document.querySelector('.cinema').getBoundingClientRect().height;
+      return {
+        p: Number(getComputedStyle(stage).getPropertyValue('--p')),
+        hidden: frames.filter((f) => Number(getComputedStyle(f).opacity) < 1).length,
+        moved: frames.filter((f) => getComputedStyle(f).transform !== 'none').length,
+        heroRatio: hero / innerHeight,
+      };
+    });
+    if (Math.abs(r.p - 1) > 0.01) problems.push(`landing (${motion}): the curtains are not open (--p ${r.p})`);
+    if (r.hidden) problems.push(`landing (${motion}): ${r.hidden} reel frames are hidden`);
+    if (motion === 'reduce' && r.moved) problems.push(`landing (reduce): ${r.moved} reel frames move`);
+    if (r.heroRatio > 1.05) problems.push(`landing (${motion}): the hero is ${r.heroRatio.toFixed(2)} viewports tall`);
+    await page.screenshot({ path: join(out, `landing-1440-${motion}-full.png`), fullPage: true });
+  }
 } finally {
-  await context.close();
+  // A busy machine can make the browser slow to close; do not wait forever.
+  await Promise.race([context.close().catch(() => {}), new Promise((r) => setTimeout(r, 20000))]);
   server.close();
 }
 if (problems.length) {
@@ -85,3 +111,4 @@ if (problems.length) {
   process.exit(1);
 }
 console.log(`qa: ${pages.length * sizes.length * 2} views in ${out}/, no console errors, no failed requests, no sideways scroll`);
+process.exit(0);

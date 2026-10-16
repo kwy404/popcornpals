@@ -918,3 +918,73 @@ body.app {
 .reply-bar .ic { width: 16px; height: 16px; }
 .set-check { cursor: pointer; }
 .set-sub { display: block; }
+
+/* The context menu: one dark menu in both themes */
+
+.ctx-menu {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  min-width: 224px;
+  max-width: min(320px, calc(100vw - 16px));
+  padding: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgb(255 255 255 / 0.09);
+  border-radius: 12px;
+  background: #161518;
+  color: #ece9e4;
+  color-scheme: dark;
+  font-size: 0.875rem;
+  box-shadow: 0 18px 48px rgb(0 0 0 / 0.55), 0 2px 8px rgb(0 0 0 / 0.35);
+  visibility: hidden;
+  outline: none;
+}
+.ctx-menu.is-placed { visibility: visible; animation: ctx-in 0.12s var(--ease) both; }
+.ctx-menu[data-side='left'].is-placed { animation-name: ctx-in-left; }
+@keyframes ctx-in { from { opacity: 0; transform: translateY(-4px) scale(0.98); } }
+@keyframes ctx-in-left { from { opacity: 0; transform: translateX(4px); } }
+
+.ctx-item {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ctx-item:hover, .ctx-item:focus, .ctx-item[aria-expanded='true'] { background: rgb(255 255 255 / 0.08); outline: none; }
+.ctx-item:focus-visible { box-shadow: inset 0 0 0 2px #c9a1a6; }
+.ctx-item[aria-disabled='true'] { color: rgb(236 233 228 / 0.42); cursor: default; }
+.ctx-item[aria-disabled='true']:hover { background: none; }
+.ctx-lead { display: grid; place-items: center; width: 18px; height: 18px; color: rgb(236 233 228 / 0.72); }
+.ctx-lead .ic { width: 16px; height: 16px; }
+.ctx-lead .ic-react { width: 16px; height: 16px; }
+.ctx-check { color: #c9a1a6; }
+.ctx-check.is-off { visibility: hidden; }
+.ctx-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctx-tail { color: rgb(236 233 228 / 0.5); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.ctx-chev { width: 14px; height: 14px; }
+.ctx-sep { height: 1px; margin: 6px 6px; background: rgb(255 255 255 / 0.08); }
+
+@media (pointer: coarse) {
+  .ctx-item { min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ctx-menu.is-placed { animation: none; }
+}
+
+/* Long press opens the menu instead of the system callout */
+.theater, .person, .chat-msg { -webkit-touch-callout: none; }
+.person:focus-visible, .chat-msg:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.person.local-muted .p-status { color: var(--rose); }

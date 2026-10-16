@@ -40,6 +40,7 @@ O popcornpals é uma sessão de cinema em grupo que roda inteira no navegador. V
 - **Supressão de ruído**: a do navegador e um modo Forte com nosso próprio processamento num AudioWorklet.
 - **Câmeras** como pequenas poltronas embaixo da tela.
 - **Escolha de dispositivos** para microfone, câmera e alto-falantes, nos Ajustes.
+- **Menu de contexto** no player, nas pessoas e nas mensagens, com o botão direito, tocando e segurando, Shift+F10 ou a tecla Menu: sincronizar todos com você, copiar o tempo, velocidade, picture in picture, tela cheia, volume ou silenciar alguém só no seu aparelho, passar o papel de anfitrião, e copiar, responder ou reagir a uma mensagem.
 
 ## Privacidade e limites
 

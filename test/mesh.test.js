@@ -207,6 +207,32 @@ describe('mesh introduction', () => {
     expect(c.inbox.map((m) => m.body.text)).toEqual(['after']);
   });
 
+  it('hands the relay role to another member, and keeps it there after someone leaves', async () => {
+    const hub = new FakeHub();
+    const host = peer(hub, 'aa', { host: true });
+    const b = peer(hub, 'bb');
+    const c = peer(hub, 'cc');
+    await join(host, b);
+    await join(host, c);
+    expect(b.handover('cc')).toBe(false);
+    expect(host.handover('zz')).toBe(false);
+    expect(host.handover('cc')).toBe(true);
+    await settle();
+    for (const m of [host, b, c]) expect(m.relay).toBe('cc');
+    // A spoofed handover from someone who is no longer the relay changes nothing.
+    host._send(host.links.get('bb'), { t: 'handover', id: 'aa', joinedAt: -1 });
+    await settle();
+    expect(b.relay).toBe('cc');
+    // A late joiner learns the order, and the old host leaving changes nothing.
+    const d = peer(hub, 'dd');
+    await join(c, d);
+    await settle();
+    expect(d.relay).toBe('cc');
+    host.leave();
+    await settle();
+    for (const m of [b, c, d]) expect(m.relay).toBe('cc');
+  });
+
   it('routes through the relay when two members cannot connect directly', async () => {
     const hub = new FakeHub();
     hub.block('bb', 'cc');

@@ -59,6 +59,7 @@ popcornpals is a watch party that runs entirely in the browser. You start a room
 - **Noise suppression**: the browser's own, plus a Strong mode that runs our DSP in an AudioWorklet (high and low pass, spectral suppression and a voice gate, about 11 ms of added delay).
 - **Cameras** shown as small seats under the screen, which go away when turned off.
 - **Device pickers** for the microphone, the camera and the speakers, in Settings.
+- **A context menu** on the player, the people and the messages, by right click, long press, Shift+F10 or the Menu key: sync everyone to you, copy the time, speed, picture in picture, fullscreen, a person's volume or mute on your device only, hand the host role over, and copy, reply or react to a message.
 - **Reactions** that float over the picture, a shared queue, a host lock for the controls, English and Portuguese, light and dark themes, and an installable app.
 
 ## The extension
@@ -80,7 +81,7 @@ The extension is optional and only needed for streaming sites. Download the zip 
 - Up to 5 people per room, all online at the same time.
 - Many streaming services block screen capture of protected video, so a shared screen shows black. Sharing never replaces a subscription.
 - The browser must be able to play the host's file. Some formats, such as some MKV files, do not play in every browser.
-- Some YouTube videos do not allow embedding, and each person sees their own ads.
+- Some YouTube videos do not allow embedding, and each person sees their own ads. Inside the YouTube player its own right click menu shows; the popcornpals menu opens from the controls bar under it.
 - Choosing the speakers needs a browser that supports it; elsewhere sound plays on the system default output.
 - When both sides are behind strict networks, a direct connection can fail. Add your own TURN server in Settings.
 

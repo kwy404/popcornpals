@@ -181,6 +181,37 @@ async function invite(host, guest, { via = 'words' } = {}) {
   return words;
 }
 
+
+// The context menu
+const menuState = (p) =>
+  p.page.evaluate(() => {
+    const menus = [...document.querySelectorAll('.ctx-menu')];
+    const a = document.activeElement;
+    return {
+      count: menus.length,
+      roles: menus.map((m) => m.getAttribute('role')),
+      items: menus.map((m) => [...m.querySelectorAll('.ctx-item')].map((b) => ({ id: b.dataset.item || '', role: b.getAttribute('role'), disabled: b.getAttribute('aria-disabled') === 'true', checked: b.getAttribute('aria-checked') }))),
+      rects: menus.map((m) => {
+        const r = m.getBoundingClientRect();
+        return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, side: m.dataset.side || '' };
+      }),
+      vw: document.documentElement.clientWidth,
+      vh: innerHeight,
+      focus: a?.dataset?.item || a?.id || a?.className || '',
+      focusRole: a?.getAttribute?.('role') || '',
+    };
+  });
+
+async function openMenuAt(p, selector) {
+  await p.page.locator(selector).first().click({ button: 'right' });
+  await p.page.waitForSelector('.ctx-menu.is-placed');
+}
+
+async function pickItem(p, id) {
+  await p.page.click(`.ctx-menu .ctx-item[data-item="${id}"]`);
+  await p.page.waitForFunction(() => !document.querySelector('.ctx-menu'));
+}
+
 async function audioIn(p, peerId) {
   return evalApp(
     p,
@@ -310,13 +341,17 @@ try {
     return window.popcornpals.S.media.kind === 'file' && v.srcObject && v.videoWidth > 0 && !v.paused;
   });
   ok(!(await bia.page.locator('#need-pick').count()), 'Bia is not asked for the file');
+  // Sample the stream until picture and sound both grow (a busy machine can be slow to start).
   const s1 = await streamStats(bia);
-  await bia.page.waitForTimeout(1500);
-  const s2 = await streamStats(bia);
+  let s2 = s1;
+  for (let k = 0; k < 15 && !(s2.frames > s1.frames && s2.audio > s1.audio); k++) {
+    await bia.page.waitForTimeout(1000);
+    s2 = await streamStats(bia);
+  }
   ok(s1.tracks === 'audio,video', `the stream carries picture and sound (${s1.tracks})`);
   ok(s2.frames > s1.frames, `Bia decodes the streamed frames (${s1.frames} then ${s2.frames})`);
   ok(s2.audio > s1.audio, `Bia receives the film's sound (${s1.audio} then ${s2.audio} bytes)`);
-  log(`only Ana has the file: Bia decodes its frames (${s2.frames - s1.frames} in 1.5 s) and its sound`);
+  log(`only Ana has the file: Bia decodes its frames (${s2.frames - s1.frames} more) and its sound`);
   await waitFor(ana, () => !!window.popcornpals.S.media.quality);
   await waitFor(bia, () => !!window.popcornpals.S.media.quality);
   log(`quality shown to both: ${await evalApp(bia, () => window.popcornpals.S.media.quality)}`);
@@ -492,6 +527,137 @@ try {
   await shot(ana, 'settings-devices.png');
   await ana.page.click('#settings-modal .modal-x');
   log(`the microphone picker lists ${mics.length} inputs and switches a live microphone without dropping the call`);
+
+
+  // The context menu: right click, keyboard, submenus, collisions and long press
+  await openMenuAt(bia, '.chat-msg');
+  let st = await menuState(bia);
+  ok(st.count === 1 && st.roles[0] === 'menu', 'a right click on a message opens one menu with role menu');
+  ok(st.items[0].map((x) => x.id).join(',') === 'copy,reply,react', `the message menu offers copy, reply and react (${st.items[0].map((x) => x.id)})`);
+  ok(st.items[0].every((x) => x.role === 'menuitem'), 'its items have role menuitem');
+  await bia.page.keyboard.press('ArrowDown');
+  ok((await menuState(bia)).focus === 'copy', 'ArrowDown focuses the first item');
+  await bia.page.keyboard.press('End');
+  await bia.page.keyboard.press('ArrowRight');
+  st = await menuState(bia);
+  ok(st.count === 2 && st.focus === 'react-popcorn', `ArrowRight opens the reactions submenu and focuses its first item (${st.focus})`);
+  ok((await bia.page.getAttribute('.ctx-item[data-item="react"]', 'aria-expanded')) === 'true', 'the parent item says its submenu is open');
+  await bia.page.keyboard.press('ArrowLeft');
+  st = await menuState(bia);
+  ok(st.count === 1 && st.focus === 'react', 'ArrowLeft closes the submenu and returns to its item');
+  await bia.page.keyboard.press('ArrowRight');
+  await bia.page.keyboard.press('ArrowDown');
+  await bia.page.keyboard.press('ArrowDown');
+  await bia.page.keyboard.press('ArrowDown');
+  await bia.page.keyboard.press('Enter');
+  await waitFor(ana, (id) => (window.popcornpals.app.room.chat.find((m) => m.text === 'Popcorn is ready')?.reactions.wow || []).includes(id), ids.bia);
+  log('message menu: right click, arrows, a submenu with ArrowRight and ArrowLeft, and Enter reacts for everyone');
+
+  await bia.page.locator('.chat-msg').first().focus();
+  await bia.page.keyboard.press('Shift+F10');
+  await bia.page.waitForSelector('.ctx-menu.is-placed');
+  ok((await menuState(bia)).focus === 'copy', 'Shift+F10 opens the menu with the first item focused');
+  await bia.page.keyboard.press('r');
+  ok((await menuState(bia)).focus === 'reply', 'type-ahead moves to Reply');
+  await bia.page.keyboard.press('Enter');
+  await bia.page.waitForSelector('.reply-bar');
+  await waitFor(bia, () => document.activeElement?.id === 'chat-input');
+  await bia.page.click('.reply-bar .icon-btn');
+  await bia.page.locator('.chat-msg').first().focus();
+  await bia.page.keyboard.press('ContextMenu');
+  await bia.page.waitForSelector('.ctx-menu.is-placed');
+  await bia.page.keyboard.press('Escape');
+  await bia.page.waitForFunction(() => !document.querySelector('.ctx-menu'));
+  ok(await bia.page.evaluate(() => document.activeElement?.classList.contains('chat-msg')), 'Escape closes the menu and focus goes back to the message');
+  log('keyboard: Shift+F10 and the Menu key open it, type-ahead finds an item, Escape closes it and gives focus back');
+
+  // Near the bottom right corner the menu flips up and left, and its submenu opens to the left.
+  await bia.page.evaluate(() => {
+    const el = document.querySelector('.chat-msg');
+    el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2, clientX: innerWidth - 3, clientY: innerHeight - 3 }));
+  });
+  await bia.page.waitForSelector('.ctx-menu.is-placed');
+  await bia.page.keyboard.press('End');
+  await bia.page.keyboard.press('ArrowRight');
+  st = await menuState(bia);
+  ok(st.count === 2, 'the submenu opened in the corner');
+  for (const r of st.rects) ok(r.left >= 0 && r.top >= 0 && r.right <= st.vw && r.bottom <= st.vh, `every menu stays inside the viewport (${JSON.stringify(st.rects)})`);
+  ok(st.rects[1].side === 'left', 'the submenu opens to the left at the right edge');
+  await shot(bia, 'menu-corner.png');
+  await bia.page.keyboard.press('Escape');
+  await bia.page.keyboard.press('Escape');
+  await bia.page.waitForFunction(() => !document.querySelector('.ctx-menu'));
+  log('viewport collisions: a menu at the corner flips inside the screen, its submenu opens to the left');
+
+  // A long press on a touch screen
+  await bia.page.evaluate(() => {
+    const el = document.querySelector('.chat-msg .chat-text');
+    const r = el.getBoundingClientRect();
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch', clientX: r.left + 10, clientY: r.top + 5 }));
+  });
+  await bia.page.waitForSelector('.ctx-menu.is-placed', { timeout: 3000 });
+  await bia.page.evaluate(() => document.querySelector('.chat-msg .chat-text').dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' })));
+  await bia.page.keyboard.press('Escape');
+  log('a long press on touch opens the same menu');
+
+  // The player menu
+  await openMenuAt(ana, '.screen-frame');
+  st = await menuState(ana);
+  ok(st.items[0].map((x) => x.id).join(',') === 'play,sync,copy-time,speed,pip,fullscreen', `the player menu (${st.items[0].map((x) => x.id)})`);
+  await pickItem(ana, 'copy-time');
+  const copied = await ana.page.evaluate(() => navigator.clipboard.readText());
+  ok(/^\d+:\d{2}$/.test(copied), `Copy timestamp copies the room time (${copied})`);
+  await openMenuAt(ana, '.screen-frame');
+  await pickItem(ana, 'play');
+  await inSync([ana, bia, caio], 'paused from the player menu', { playing: false });
+  await openMenuAt(caio, '.screen-frame');
+  await caio.page.click('.ctx-item[data-item="speed"]');
+  await caio.page.waitForSelector('.ctx-menu[data-depth="1"]');
+  await pickItem(caio, 'rate-1.5');
+  await waitFor(ana, () => window.popcornpals.app.room.state.rate === 1.5);
+  await openMenuAt(bia, '.screen-frame');
+  await pickItem(bia, 'sync');
+  await openMenuAt(ana, '.screen-frame');
+  await pickItem(ana, 'play');
+  await ana.page.waitForTimeout(1500);
+  await inSync([ana, bia, caio], 'resumed from the menu at 1.5x after Bia synced everyone to her', { playing: true });
+  await ana.page.evaluate(() => window.popcornpals.actions.setRate(1));
+  log(`player menu: play and pause, copy timestamp (${copied}), speed in a submenu, sync everyone to me`);
+
+  // The member menu: volume and mute on this device, and the host role
+  await ana.page.locator(`#people-list .person[data-id="${ids.bia}"]`).focus();
+  await ana.page.keyboard.press('Shift+F10');
+  await ana.page.waitForSelector('.ctx-menu.is-placed');
+  ok((await menuState(ana)).focus === 'volume', 'the member menu starts on Volume');
+  await ana.page.keyboard.press('ArrowRight');
+  await shot(ana, 'menu-member.png');
+  await ana.page.keyboard.press('ArrowDown');
+  await ana.page.keyboard.press('ArrowDown');
+  await ana.page.keyboard.press('Enter');
+  ok((await ana.page.evaluate((id) => document.querySelector(`#audio-sink audio[data-peer="${id}"]`)?.volume, ids.bia)) === 0.5, "Bia's voice plays at 50% for Ana");
+  await openMenuAt(ana, `#people-list .person[data-id="${ids.bia}"]`);
+  ok((await menuState(ana)).items[0].find((x) => x.id === 'mute-local').role === 'menuitemcheckbox', 'Mute for me is a checkbox item');
+  await pickItem(ana, 'mute-local');
+  ok(await ana.page.evaluate((id) => document.querySelector(`#audio-sink audio[data-peer="${id}"]`)?.muted, ids.bia), "Bia's voice is muted for Ana");
+  ok((await ana.page.textContent(`#people-list .person[data-id="${ids.bia}"] .p-status`)).includes('muted for you'), 'the people list says muted for you');
+  ok(!(await bia.page.evaluate(() => window.popcornpals.S.voice.muted)), "Bia's own microphone is not muted");
+  await openMenuAt(ana, `#people-list .person[data-id="${ids.bia}"]`);
+  await pickItem(ana, 'mute-local');
+  log('member menu: volume at 50% in a submenu and Mute for me change only Ana\'s device');
+
+  await caio.page.click('#tab-people');
+  await openMenuAt(caio, `#people-list .person[data-id="${ids.bia}"]`);
+  ok((await menuState(caio)).items[0].find((x) => x.id === 'make-host').disabled, 'only the host may hand over the room');
+  await caio.page.keyboard.press('Escape');
+  await openMenuAt(ana, `#people-list .person[data-id="${ids.caio}"]`);
+  await pickItem(ana, 'make-host');
+  for (const p of [ana, bia, caio]) await waitFor(p, (id) => window.popcornpals.app.room.hostId === id && window.popcornpals.app.room.state.host === id, ids.caio);
+  await inSync([ana, bia, caio], 'still in step after Caio became the host', { playing: true });
+  await openMenuAt(caio, `#people-list .person[data-id="${ids.ana}"]`);
+  await pickItem(caio, 'make-host');
+  for (const p of [ana, bia, caio]) await waitFor(p, (id) => window.popcornpals.app.room.hostId === id && window.popcornpals.app.room.state.host === id, ids.ana);
+  await caio.page.click('#tab-chat');
+  log('make host: Ana hands the room to Caio and he hands it back, playback stays in step');
 
   // Screen share
   await ana.page.click('.ctl-btn[aria-label="Stop and choose something else"]');

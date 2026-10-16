@@ -100,6 +100,11 @@ export class Room extends Emitter {
     return this.mesh.memberList();
   }
 
+  /** The host hands the room to someone else; their device takes over the room state. */
+  makeHost(peerId) {
+    return this.isHost && this.mesh.handover(peerId);
+  }
+
   onlineCount() {
     return this.mesh.onlineCount();
   }

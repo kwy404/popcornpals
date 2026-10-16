@@ -16,4 +16,5 @@ All notable changes to popcornpals are documented here. The format follows [Keep
 - Text chat with replies, reactions and clickable video times; floating reactions; a shared queue; a host lock.
 - Voice for everyone with mute, ducking of the movie while someone talks, and noise suppression (the browser's own and a Strong DSP mode in an AudioWorklet).
 - Cameras shown as seats under the screen, and pickers for the microphone, the camera and the speakers.
-- A landing page where cinema curtains open on the screen as you scroll, light and dark themes, English and Portuguese, and an installable app that works offline once loaded.
+- One accessible context menu (right click, long press, Shift+F10 or the Menu key) with submenus and keyboard support: on the player, play or pause, sync everyone to me, copy timestamp, speed, picture in picture and fullscreen; on people, volume, mute for me and make host; on messages, copy, reply and react.
+- A landing page where cinema curtains open on the screen, light and dark themes, English and Portuguese, and an installable app that works offline once loaded.

@@ -3,7 +3,7 @@
 // works under any folder (GitHub Pages serves it from /popcornpals/app/).
 // Pages are fetched from the network first and fall back to the cache.
 
-const CACHE = 'popcornpals-app-v1';
+const CACHE = 'popcornpals-app-v2';
 const SHELL = [
   './',
   'index.html',
@@ -20,6 +20,7 @@ const SHELL = [
   'js/players.js',
   'js/media.js',
   'js/words-ui.js',
+  'js/menu.js',
   'js/denoise-worklet.js',
   'core/bytes.js',
   'core/chat.js',
@@ -28,6 +29,7 @@ const SHELL = [
   'core/emitter.js',
   'core/extsync.js',
   'core/filehash.js',
+  'core/menu.js',
   'core/mesh.js',
   'core/mqtt.js',
   'core/pairing.js',

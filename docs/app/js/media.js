@@ -22,6 +22,8 @@ export class Media extends Emitter {
     this.screen = null; // { stream, video, audio }
     this.movie = null; // { stream } a local file this device streams to everyone
     this.remote = new Map(); // peerId -> { audio: HTMLAudioElement, stream, level }
+    this.volumes = new Map(); // peerId -> 0 to 1, set from the people list on this device only
+    this.mutedPeers = new Set(); // voices muted on this device only
     this.screenAudio = new Map();
     this.links = new Map();
     this.ctx = null;
@@ -281,6 +283,8 @@ export class Media extends Emitter {
       const audio = document.createElement('audio');
       audio.autoplay = true;
       audio.dataset.peer = peerId;
+      audio.volume = this.peerVolume(peerId);
+      audio.muted = this.mutedPeers.has(peerId);
       this.sink.append(audio);
       sinkTo(audio, this.outId);
       r = { audio, stream: null };
@@ -291,6 +295,33 @@ export class Media extends Emitter {
     r.audio.play().catch(() => this.emit('blocked'));
     this._analyse(peerId, stream);
     return 'voice';
+  }
+
+  /** How loud a person's voice plays on this device, from 0 to 1. */
+  peerVolume(peerId) {
+    return this.volumes.get(peerId) ?? 1;
+  }
+
+  setPeerVolume(peerId, volume) {
+    const v = Math.max(0, Math.min(1, Number(volume)));
+    if (!Number.isFinite(v)) return;
+    this.volumes.set(peerId, v);
+    const r = this.remote.get(peerId);
+    if (r) r.audio.volume = v;
+    this.emit('change');
+  }
+
+  isPeerMuted(peerId) {
+    return this.mutedPeers.has(peerId);
+  }
+
+  /** Mute one person on this device only; nobody else is affected. */
+  setPeerMuted(peerId, muted) {
+    if (muted) this.mutedPeers.add(peerId);
+    else this.mutedPeers.delete(peerId);
+    const r = this.remote.get(peerId);
+    if (r) r.audio.muted = !!muted;
+    this.emit('change');
   }
 
   /** Try again to play every remote sound, after a click unlocked audio. */

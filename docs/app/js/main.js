@@ -8,6 +8,7 @@ import { Room } from './room.js';
 import { FilePlayer, ScreenView, YouTubePlayer } from './players.js';
 import { Media } from './media.js';
 import { wireWordInputs } from './words-ui.js';
+import { Menu, bindContextMenu } from './menu.js';
 import { CodeCreator, CodeJoiner } from '../core/pairing.js';
 import { DEFAULT_BROKERS } from '../core/relay.js';
 import { MAX_MEMBERS } from '../core/mesh.js';
@@ -208,22 +209,7 @@ const actions = {
   async copyInviteLink() {
     const link = S.invite.link;
     if (!link) return;
-    let done = false;
-    try {
-      await navigator.clipboard.writeText(link);
-      done = true;
-    } catch {
-      // No clipboard permission: fall back to selecting the field.
-      const field = $('invite-link');
-      field?.focus();
-      field?.select();
-      try {
-        done = document.execCommand('copy');
-      } catch {
-        done = false;
-      }
-    }
-    if (!done) return toast(t('invite.copyFail'), 'warn');
+    if (!(await copyText(link, $('invite-link')))) return toast(t('invite.copyFail'), 'warn');
     S.invite.copied = true;
     clearTimeout(app.copiedTimer);
     app.copiedTimer = setTimeout(() => (S.invite.copied = false), 2200);
@@ -469,6 +455,178 @@ const actions = {
     toast(t('settings.saved'));
   },
 };
+
+/** Put text on the clipboard; without permission, select it in a field and copy that. */
+async function copyText(text, field = null) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    let el = field;
+    const temp = !el;
+    if (temp) {
+      el = Object.assign(document.createElement('textarea'), { value: text, readOnly: true });
+      el.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+      document.body.append(el);
+    }
+    el.focus();
+    el.select();
+    let done = false;
+    try {
+      done = document.execCommand('copy');
+    } catch {
+      done = false;
+    }
+    if (temp) el.remove();
+    return done;
+  }
+}
+
+// The context menu: right click, long press, or Shift+F10 and the Menu key.
+
+const menu = new Menu();
+const MENU_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
+/** Where my own player is, in seconds, or null when I only watch someone else's stream. */
+function myTime() {
+  const st = app.room?.state;
+  const src = st?.src;
+  if (!src || src.kind === 'screen') return null;
+  if (src.kind === 'ext') return S.ext.found ? S.ext.pos + (S.ext.playing ? ((Date.now() - S.ext.at) / 1000) * (st.rate || 1) : 0) : null;
+  const p = app.player;
+  if (!p || (p.kind !== 'file' && p.kind !== 'yt') || p.ready === false) return null;
+  return Number.isFinite(p.time) ? p.time : null;
+}
+
+/** The video element on the stage that can go picture in picture, if any. */
+function pipVideo() {
+  if (!document.pictureInPictureEnabled) return null;
+  return [$('file-video'), $('screen-video')].find((v) => v && !v.hidden && v.readyState >= 1 && !v.disablePictureInPicture) || null;
+}
+
+async function togglePip() {
+  try {
+    if (document.pictureInPictureElement) await document.exitPictureInPicture();
+    else await pipVideo().requestPictureInPicture();
+  } catch {
+    toast(t('ctx.pipNone'), 'warn');
+  }
+}
+
+function playerMenu(anchor) {
+  const room = app.room;
+  const st = room.state;
+  const src = st?.src;
+  if (!src) return null;
+  const screen = src.kind === 'screen';
+  const can = room.canControl && !screen;
+  const mine = myTime();
+  const rate = Number(st.rate) || 1;
+  return {
+    label: t('ctx.player'),
+    anchor,
+    items: [
+      { id: 'play', label: st.playing ? t('ctl.pause') : t('ctl.play'), icon: st.playing ? 'pause' : 'play', disabled: !can, run: () => actions.togglePlay() },
+      {
+        id: 'sync',
+        label: t('ctx.syncToMe'),
+        icon: 'sync',
+        disabled: !can || mine === null,
+        run: () => {
+          const pos = myTime();
+          if (pos === null) return;
+          room.intent('seek', { pos });
+          toast(t('ctx.synced', { t: formatTime(pos) }));
+        },
+      },
+      {
+        id: 'copy-time',
+        label: t('ctx.copyTime'),
+        icon: 'clock',
+        hint: screen ? '' : formatTime(room.expected()),
+        disabled: screen,
+        run: async () => {
+          const text = formatTime(room.expected());
+          if (await copyText(text)) toast(t('ctx.copiedTime', { t: text }));
+          else toast(t('invite.copyFail'), 'warn');
+        },
+      },
+      { id: 'speed', label: t('ctl.rate'), icon: 'rate', disabled: !can, items: MENU_RATES.map((r) => ({ id: `rate-${r}`, label: `${r}x`, radio: true, checked: Math.abs(rate - r) < 0.01, run: () => actions.setRate(r) })) },
+      { separator: true },
+      { id: 'pip', label: t('ctx.pip'), icon: 'pip', checked: !!document.pictureInPictureElement, disabled: !document.pictureInPictureElement && !pipVideo(), run: togglePip },
+      { id: 'fullscreen', label: t('ctx.fullscreen'), icon: 'fullscreen', checked: !!document.fullscreenElement, run: () => actions.fullscreen() },
+    ],
+  };
+}
+
+function memberMenu(id, anchor) {
+  const p = S.people.find((x) => x.id === id);
+  const m = app.media;
+  if (!p || !m) return null;
+  const label = t('ctx.member', { name: p.name });
+  if (p.me) {
+    return {
+      label,
+      anchor,
+      items: [
+        { id: 'mic', label: S.voice.on ? (S.voice.muted ? t('voice.unmute') : t('voice.mute')) : t('voice.join'), icon: S.voice.on && !S.voice.muted ? 'mic' : 'mic-off', run: () => actions.toggleMic() },
+        { id: 'camera', label: S.voice.camera ? t('camera.off') : t('camera.on'), icon: S.voice.camera ? 'camera' : 'camera-off', run: () => actions.toggleCamera() },
+      ],
+    };
+  }
+  const volume = m.peerVolume(id);
+  const muted = m.isPeerMuted(id);
+  const host = app.room.isHost;
+  const setVolume = (v) => {
+    m.setPeerVolume(id, v);
+    renderPeople();
+  };
+  return {
+    label,
+    anchor,
+    items: [
+      { id: 'volume', label: t('ctx.volume'), icon: 'volume', items: [1, 0.75, 0.5, 0.25].map((v) => ({ id: `volume-${Math.round(v * 100)}`, label: `${Math.round(v * 100)}%`, radio: true, checked: Math.abs(volume - v) < 0.01, run: () => setVolume(v) })) },
+      {
+        id: 'mute-local',
+        label: t('ctx.muteLocal'),
+        checked: muted,
+        run: () => {
+          m.setPeerMuted(id, !muted);
+          renderPeople();
+        },
+      },
+      { separator: true },
+      { id: 'make-host', label: t('ctx.makeHost'), icon: 'crown', hint: host ? '' : t('ctx.hostOnly'), disabled: !host || p.host || !p.online, run: () => app.room?.makeHost(id) },
+    ],
+  };
+}
+
+function messageMenu(id, anchor) {
+  const msg = app.room.chat.find((x) => x.id === id);
+  if (!msg) return null;
+  return {
+    label: t('ctx.message'),
+    anchor,
+    items: [
+      { id: 'copy', label: t('ctx.copy'), icon: 'copy', run: async () => toast((await copyText(msg.text)) ? t('ctx.copied') : t('invite.copyFail'), 'info', 1800) },
+      { id: 'reply', label: t('chat.reply'), icon: 'reply', run: () => actions.startReply(id) },
+      { id: 'react', label: t('ctx.react'), icon: 'react-heart', items: REACTIONS.map((r) => ({ id: `react-${r}`, label: t(`react.${r}`), checked: (msg.reactions[r] || []).includes(myId), run: () => actions.react(id, r) })) },
+    ],
+  };
+}
+
+function resolveMenu(target) {
+  if (!app.room || S.view !== 'room' || !target?.closest) return null;
+  // Text fields keep the browser's own menu, for cut, copy and paste.
+  if (target.closest('input, textarea, select, dialog, .ctx-menu')) return null;
+  const msg = target.closest('.chat-msg[data-id]');
+  if (msg) return messageMenu(msg.dataset.id, msg);
+  const person = target.closest('.person[data-id]');
+  if (person) return memberMenu(person.dataset.id, person);
+  const theater = target.closest('.theater');
+  if (theater) return playerMenu(target.closest('.screen-frame') || theater);
+  return null;
+}
 
 /** The video elements on the stage, so their sound follows the chosen speakers. */
 function stageMedia() {
@@ -1318,7 +1476,7 @@ function renderPeople() {
       const level = me ? media?.level('self') || 0 : media?.level(m.id) || 0;
       const mic = !!st?.mic;
       const muted = !!st?.muted;
-      return { id: m.id, name: m.name, initials: initials(m.name), color: colorFor(m.id), host: m.id === host, me, online: m.online, mic, muted, speaking: mic && !muted && level > 0.08, statusText: statusText(st, true), micText: !mic ? t('mic.off') : muted ? t('mic.muted') : t('mic.on') };
+      return { id: m.id, name: m.name, initials: initials(m.name), color: colorFor(m.id), host: m.id === host, me, online: m.online, mic, muted, localMuted: !me && !!media?.isPeerMuted(m.id), speaking: mic && !muted && level > 0.08, statusText: statusText(st, true), micText: !mic ? t('mic.off') : muted ? t('mic.muted') : t('mic.on') };
     });
   S.people.splice(0, S.people.length, ...list);
   S.room.count = room.onlineCount();
@@ -1392,6 +1550,7 @@ function boot() {
 
   const dl = $('bip39');
   dl.append(...WORDLIST.map((w) => Object.assign(document.createElement('option'), { value: w })));
+  bindContextMenu(document, menu, resolveMenu);
   wireWordInputs(document, {
     onComplete(prefix, how) {
       // A pasted phrase or link joins at once; typed words wait for the button.
