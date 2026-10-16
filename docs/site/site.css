@@ -300,14 +300,18 @@ code {
   background: var(--stage-floor);
 }
 
-.scrolly .cinema {
-  height: calc(100svh + 75svh);
+/* The curtains open once the page loads (see .motion .stage below): --p
+   goes from 0, drawn over the edges of the screen, to 1, gathered at the
+   sides. The hero is one viewport tall, with no pinned scroll range. */
+@property --p {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
 }
 
 .stage {
-  --p: 0;
-  position: sticky;
-  top: 0;
+  --p: 1;
+  position: relative;
   height: 100svh;
   min-height: 600px;
   overflow: hidden;
@@ -515,6 +519,18 @@ code {
   0% { transform: translate(0, 0); opacity: .15; }
   50% { opacity: .7; }
   100% { transform: translate(28px, -46px); opacity: .2; }
+}
+
+/* The opening: the house lights dim, then the curtains part while the
+   opening credits roll. Without motion (or without the .motion class the
+   head script sets) the curtains simply start open. */
+.motion .stage {
+  animation: curtains-open 2.6s cubic-bezier(.55, 0, .25, 1) .45s both;
+}
+
+@keyframes curtains-open {
+  from { --p: 0; }
+  to { --p: 1; }
 }
 
 /* Curtains: they start drawn over the edges of the screen and gather to the
@@ -913,14 +929,12 @@ code {
 /* The frames advance into the gate as they scroll in. Only armed by the
    script, so without it every frame is simply there. */
 .armed .frame {
-  opacity: 0;
-  transform: translateY(56px);
-  filter: brightness(.45);
-  transition: opacity .9s var(--ease), transform 1.05s var(--ease), filter 1.2s var(--ease);
+  transform: translateY(36px);
+  filter: brightness(.6);
+  transition: transform .7s var(--ease), filter .8s var(--ease);
 }
 
 .armed .frame.is-in {
-  opacity: 1;
   transform: none;
   filter: none;
 }
@@ -1831,8 +1845,15 @@ code {
     animation: none;
   }
 
-  .stage {
+  .stage,
+  .motion .stage {
     --p: 1;
+    animation: none;
+  }
+
+  .armed .frame {
+    transform: none;
+    filter: none;
   }
 
   .strip::before,

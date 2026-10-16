@@ -22,38 +22,6 @@ function paintThemeColor() {
   if (meta) meta.content = root.getAttribute('data-theme') === 'light' ? '#F5F3EF' : '#0A0A0B';
 }
 
-// ------------------------------------------------------------------- hero
-// --p goes from 0 (curtains over the edges of the screen) to 1 (gathered at
-// the sides) over the first stretch of scrolling, while the stage is pinned.
-const hero = document.querySelector('.cinema');
-const stage = hero?.querySelector('.stage');
-let queued = false;
-
-function paintHero() {
-  queued = false;
-  if (!hero || !stage) return;
-  if (still() || !root.classList.contains('scrolly')) {
-    stage.style.removeProperty('--p');
-    return;
-  }
-  const range = hero.offsetHeight - stage.offsetHeight;
-  const scrolled = hero.offsetTop - hero.getBoundingClientRect().top;
-  const t = range > 0 ? Math.min(1, Math.max(0, scrolled / range)) : 1;
-  const eased = t * t * (3 - 2 * t);
-  stage.style.setProperty('--p', eased.toFixed(4));
-}
-
-function queueHero() {
-  if (queued) return;
-  queued = true;
-  requestAnimationFrame(paintHero);
-}
-
-function setScrolly() {
-  root.classList.toggle('scrolly', Boolean(hero) && !still());
-  queueHero();
-}
-
 // ------------------------------------------------------------------ reels
 // Each frame starts below its place, dim, and moves into the gate when it is
 // seen. The sprocket holes of its strip run up by the same beat.
@@ -90,10 +58,6 @@ function boot() {
   paintThemeColor();
   document.addEventListener('voodoo:theme', paintThemeColor);
   new MutationObserver(paintThemeColor).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
-  setScrolly();
-  addEventListener('scroll', queueHero, { passive: true });
-  addEventListener('resize', queueHero);
-  reduced?.addEventListener?.('change', setScrolly);
   armReels();
 }
 
