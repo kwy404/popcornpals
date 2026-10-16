@@ -16,8 +16,8 @@ import { startBroker } from './ws-broker.mjs';
 const VIDEO = process.env.E2E_YT_ID || 'aqz-KE-bpKQ';
 const TOLERANCE = 1.0;
 const executablePath = findBrowser(process.argv[2]);
-const port = 8900 + Math.floor(Math.random() * 90);
-const server = await serve(port, 'docs', { base: '/popcornpals/' });
+const server = await serve(0, 'docs', { base: '/popcornpals/' });
+const { port } = server.address();
 const broker = await startBroker();
 const base = `http://127.0.0.1:${port}/popcornpals/app/`;
 const CDN = {
@@ -148,7 +148,8 @@ try {
   if (errors.length) console.error(`console errors:\n${errors.join('\n')}`);
   process.exitCode = 1;
 } finally {
-  await Promise.all(people.map((p) => p.context.close().catch(() => {})));
+  // A busy machine can make a browser slow to close; do not wait forever.
+  await Promise.race([Promise.all(people.map((p) => p.context.close().catch(() => {}))), new Promise((r) => setTimeout(r, 20000))]);
   broker.close();
   server.close();
   setTimeout(() => process.exit(process.exitCode ?? 0), 200);

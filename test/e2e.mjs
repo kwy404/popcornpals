@@ -34,8 +34,9 @@ const live = process.env.E2E_LIVE === '1';
 const shots = process.env.E2E_SHOTS || '';
 if (shots) mkdirSync(shots, { recursive: true });
 
-const port = 8700 + Math.floor(Math.random() * 200);
-const server = await serve(port, 'docs', { base: '/popcornpals/' });
+// A free port picked by the system: many programs share this machine.
+const server = await serve(0, 'docs', { base: '/popcornpals/' });
+const { port } = server.address();
 const broker = live ? null : await startBroker();
 const base = `http://127.0.0.1:${port}/popcornpals/app/`;
 
@@ -80,7 +81,7 @@ const evalApp = (p, fn, arg) => p.page.evaluate(fn, arg);
 const shot = async (p, file) => shots && p.page.screenshot({ path: join(shots, file) });
 const idOf = (p) => evalApp(p, () => window.popcornpals.app.room.self.id);
 
-async function waitFor(p, fn, arg, timeout = 30000) {
+async function waitFor(p, fn, arg, timeout = 60000) {
   try {
     await p.page.waitForFunction(fn, arg, { timeout, polling: 200 });
   } catch (err) {
@@ -706,7 +707,8 @@ try {
   if (errors.length) console.error(`console errors:\n${errors.join('\n')}`);
   process.exitCode = 1;
 } finally {
-  await Promise.all(people.map((p) => p.context.close().catch(() => {})));
+  // A busy machine can make a browser slow to close; do not wait forever.
+  await Promise.race([Promise.all(people.map((p) => p.context.close().catch(() => {}))), new Promise((r) => setTimeout(r, 20000))]);
   broker?.close();
   server.close();
   setTimeout(() => process.exit(process.exitCode ?? 0), 200);

@@ -11,8 +11,8 @@ import { findBrowser, launchPerson } from '../test/browser.mjs';
 
 const out = 'out/qa';
 mkdirSync(out, { recursive: true });
-const port = 8500 + Math.floor(Math.random() * 200);
-const server = await serve(port, 'docs', { base: '/popcornpals/' });
+const server = await serve(0, 'docs', { base: '/popcornpals/' });
+const { port } = server.address();
 const base = `http://127.0.0.1:${port}/popcornpals/`;
 const CDN = {
   'https://cdn.jsdelivr.net/npm/monsooncss@0.2.0/dist/monsoon.min.css': ['node_modules/monsooncss/dist/monsoon.min.css', 'text/css'],

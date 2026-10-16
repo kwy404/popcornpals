@@ -60,7 +60,11 @@ export function serve(port = 8080, root = 'docs', { base = '/', host = '127.0.0.
       res.end(body);
     }
   });
-  return new Promise((ok) => server.listen(port, host, () => ok(server)));
+  // Port 0 lets the system pick a free port: read it from server.address().port.
+  return new Promise((ok, fail) => {
+    server.once('error', fail);
+    server.listen(port, host, () => ok(server));
+  });
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
