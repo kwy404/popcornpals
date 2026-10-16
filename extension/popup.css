@@ -1,0 +1,18 @@
+:root { color-scheme: dark; }
+body { width: 300px; margin: 0; padding: 14px; font: 13px/1.45 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; background: #0a0a0b; color: #ededed; }
+header { display: flex; align-items: center; gap: 10px; font-size: 14px; margin-bottom: 12px; }
+section { border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 12px; margin-bottom: 10px; background: #111113; }
+.row { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #8a8a8f; flex: none; }
+.dot.ok { background: #8fb39d; }
+.dot.bad { background: #b4505d; }
+button { font: inherit; cursor: pointer; border-radius: 999px; padding: 8px 14px; border: 1px solid rgba(255, 255, 255, 0.18); background: transparent; color: #ededed; }
+button.primary { width: 100%; margin-top: 4px; background: #ededed; color: #0a0a0b; border-color: #ededed; font-weight: 600; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button:focus-visible { outline: 2px solid #c9a1a6; outline-offset: 2px; }
+.hint { margin: 8px 0 0; color: #8a8a8f; font-size: 12px; }
+h2 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: #c9a1a6; text-transform: uppercase; letter-spacing: 0.08em; }
+ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+li { display: flex; align-items: center; justify-content: space-between; gap: 8px; overflow-wrap: anywhere; }
+li button { padding: 3px 10px; font-size: 12px; }
+footer { color: #8a8a8f; font-size: 12px; }

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test streaming site</title>
+<style>
+  body { margin: 0; font: 14px system-ui, sans-serif; background: #111; color: #eee; }
+  header { padding: 12px 20px; border-bottom: 1px solid #333; }
+  main { padding: 20px; }
+  .player { position: relative; width: 640px; max-width: 100%; }
+  video { width: 100%; display: block; background: #000; }
+  .bar { display: flex; gap: 8px; margin-top: 8px; }
+  .thumb { width: 160px; height: 90px; }
+</style>
+</head>
+<body>
+<header>A test streaming site for the extension test</header>
+<main>
+  <div class="player">
+    <video id="movie" src="/media/countdown.webm" playsinline preload="auto"></video>
+    <div class="bar">
+      <button type="button" id="site-play">Play</button>
+      <button type="button" id="site-pause">Pause</button>
+      <button type="button" id="site-jump">Jump to 25 s</button>
+    </div>
+  </div>
+  <!-- A small preview video the extension must not pick -->
+  <video class="thumb" muted src="/media/countdown.webm"></video>
+</main>
+<script>
+  const v = document.getElementById('movie');
+  // What happened to the player, for the test to print when something fails.
+  window.__events = [];
+  for (const type of ['play', 'playing', 'pause', 'seeking', 'seeked', 'ratechange']) {
+    v.addEventListener(type, () => window.__events.push(`${(performance.now() / 1000).toFixed(2)} ${type} ${v.currentTime.toFixed(2)}`));
+  }
+  new MutationObserver((list) => {
+    for (const r of list) if (r.target.dataset?.ppState) window.__events.push(`${(performance.now() / 1000).toFixed(2)} state ${r.target.dataset.ppState}`);
+  }).observe(document.documentElement, { attributes: true, subtree: true, attributeFilter: ['data-pp-state'] });
+  document.getElementById('site-play').onclick = () => v.play();
+  document.getElementById('site-pause').onclick = () => v.pause();
+  let own = false;
+  document.getElementById('site-jump').onclick = () => {
+    own = true;
+    v.currentTime = 25;
+  };
+  // ?noseek=1 imitates a player that undoes any seek it did not start itself.
+  if (new URLSearchParams(location.search).has('noseek')) {
+    let last = 0;
+    setInterval(() => {
+      if (!v.seeking) last = v.currentTime;
+    }, 100);
+    let reverting = false;
+    v.addEventListener('seeking', () => {
+      if (own || reverting) {
+        own = false;
+        reverting = false;
+        return;
+      }
+      const back = last;
+      setTimeout(() => {
+        reverting = true;
+        v.currentTime = back;
+      }, 0);
+    });
+  }
+</script>
+</body>
+</html>
