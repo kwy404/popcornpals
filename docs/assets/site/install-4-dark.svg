@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 340" width="560" height="340" role="img">
+<title>On the streaming site tab, the popcornpals button in the toolbar opens a small panel with the button Sync this tab with my room</title>
+<rect x="8" y="8" width="544" height="324" rx="14" fill="#111113" stroke="rgba(255,255,255,0.16)"/>
+<path d="M8 22A14 14 0 0 1 22 8H538A14 14 0 0 1 552 22V44H8Z" fill="#1E1E22"/>
+<circle cx="28" cy="27" r="4.5" fill="#3A3A40"/><circle cx="43" cy="27" r="4.5" fill="#3A3A40"/><circle cx="58" cy="27" r="4.5" fill="#3A3A40"/>
+<path d="M80 44V24A6 6 0 0 1 86 18H206A6 6 0 0 1 212 24V44Z" fill="#111113"/>
+<text x="94" y="35" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11.5" font-weight="400" fill="#8A8A8F" text-anchor="start">Your video</text>
+<rect x="20" y="54" width="470" height="24" rx="12" fill="#1E1E22"/>
+<rect x="36" y="63" width="120" height="6" rx="3" fill="#3A3A40"/>
+<rect x="502" y="52" width="32" height="28" rx="8" fill="#7A2633" fill-opacity="0.25" stroke="#C9A1A6" stroke-width="1.4"/>
+<g transform="translate(506 54) scale(1)" fill="none" stroke="#EDEDED" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10.5l1.4 9.9a1 1 0 0 0 1 .6h7.2a1 1 0 0 0 1-.6l1.4-9.9"/><path d="M5.6 10.5a2.25 2.25 0 0 1 1.7-3.9A2.6 2.6 0 0 1 12 5a2.6 2.6 0 0 1 4.7 1.6 2.25 2.25 0 0 1 1.7 3.9z"/></g>
+<path d="M8 88H552" stroke="rgba(255,255,255,0.10)"/>
+<rect x="24" y="102" width="320" height="190" rx="10" fill="#0A0A0B" stroke="rgba(255,255,255,0.10)"/>
+<circle cx="230" cy="160" r="20" fill="#E9E1CF" opacity="0.75"/>
+<path d="M24 236C90 206 150 214 206 238S300 230 344 214V282A10 10 0 0 1 334 292H34A10 10 0 0 1 24 282Z" fill="#5E1A26" opacity="0.9"/>
+<path d="M44 274H324" stroke="rgba(255,255,255,0.25)" stroke-width="3" stroke-linecap="round"/><path d="M44 274H170" stroke="#C9A1A6" stroke-width="3" stroke-linecap="round"/><circle cx="170" cy="274" r="5" fill="#EDEDED"/>
+<text x="24" y="314" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11.5" font-weight="400" fill="#8A8A8F" text-anchor="start">The video on the streaming site, in your own account</text>
+<path d="M512 86L518 92H506Z" fill="#17171A"/>
+<rect x="320" y="90" width="222" height="214" rx="12" fill="#17171A" stroke="rgba(255,255,255,0.16)"/>
+<g transform="translate(334 102)" fill="none" stroke="#EDEDED" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10.5l1.4 9.9a1 1 0 0 0 1 .6h7.2a1 1 0 0 0 1-.6l1.4-9.9"/><path d="M5.6 10.5a2.25 2.25 0 0 1 1.7-3.9A2.6 2.6 0 0 1 12 5a2.6 2.6 0 0 1 4.7 1.6 2.25 2.25 0 0 1 1.7 3.9z"/></g>
+<text x="364" y="120" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" fill="#EDEDED" text-anchor="start">popcornpals sync</text>
+<path d="M320 134H542" stroke="rgba(255,255,255,0.10)"/>
+<circle cx="340" cy="153" r="4" fill="#CDBB8E"/><text x="352" y="157" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11.5" font-weight="400" fill="#EDEDED" text-anchor="start">popcornpals tab connected</text>
+<circle cx="340" cy="177" r="4" fill="#3A3A40"/><text x="352" y="181" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11.5" font-weight="400" fill="#EDEDED" text-anchor="start">This tab: video.example</text>
+<rect x="334" y="196" width="194" height="34" rx="9" fill="#7A2633"/>
+<rect x="329" y="191" width="204" height="44" rx="13" fill="none" stroke="#C9A1A6" stroke-opacity="0.35" stroke-width="4"/>
+<text x="431" y="218" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" fill="#F3E9EA" text-anchor="middle">Sync this tab with my room</text>
+<path transform="translate(516 222)" d="M0 0L0 17L4.5 13L7.5 20L10.5 18.7L7.6 12H13.5Z" fill="#EDEDED" stroke="#0A0A0B" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="334" y="250" width="190" height="6" rx="3" fill="#26262B"/><rect x="334" y="264" width="160" height="6" rx="3" fill="#26262B"/><rect x="334" y="278" width="120" height="6" rx="3" fill="#26262B"/>
+</svg>

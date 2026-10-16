@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 430" width="720" height="430" role="img">
+<title>Three devices connected straight to each other with encrypted links; a public relay above them only passes the encrypted pairing handshake</title>
+<rect x="250" y="20" width="220" height="62" rx="14" fill="#FAF8F5" stroke="rgba(0,0,0,0.18)" stroke-dasharray="5 5"/>
+<text x="360" y="47" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="600" fill="#141416" text-anchor="middle">Public pairing relay</text>
+<text x="360" y="67" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11.5" font-weight="400" fill="#6B6B70" text-anchor="middle">sees only encrypted handshake data</text>
+<path d="M300 82L150 204M360 82V192M420 82L570 200" stroke="#6B6B70" stroke-opacity="0.6" stroke-width="1.4" stroke-dasharray="2 7" stroke-linecap="round"/>
+<path d="M228 258H318M402 258H490M150 330C150 380 570 380 570 322" fill="none" stroke="#9C4A55" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<g>
+<rect x="72" y="208" width="156" height="98" rx="8" fill="#EFECE7" stroke="rgba(0,0,0,0.18)"/><rect x="80" y="216" width="140" height="82" rx="3" fill="#1A1519"/>
+<circle cx="172.4" cy="243.88" r="11.48" fill="#E9E1CF" opacity="0.8"/>
+<path d="M80 275.04C122 261.1 164 270.12 220 265.2V298H80Z" fill="#5E1A26"/>
+<path d="M56 312H244L236 322H64Z" fill="#E4E0DA" stroke="rgba(0,0,0,0.18)"/>
+</g>
+<g>
+<rect x="318" y="196" width="84" height="150" rx="14" fill="#EFECE7" stroke="rgba(0,0,0,0.18)"/><rect x="326" y="214" width="68" height="110" rx="3" fill="#1A1519"/>
+<circle cx="370.88" cy="251.4" r="15.400000000000002" fill="#E9E1CF" opacity="0.8"/>
+<path d="M326 293.2C346.4 274.5 366.8 286.6 394 280V324H326Z" fill="#5E1A26"/>
+</g>
+<g>
+<rect x="490" y="204" width="160" height="104" rx="8" fill="#EFECE7" stroke="rgba(0,0,0,0.18)"/><rect x="498" y="212" width="144" height="88" rx="3" fill="#1A1519"/>
+<circle cx="593.04" cy="241.92000000000002" r="12.32" fill="#E9E1CF" opacity="0.8"/>
+<path d="M498 275.36C541.2 260.4 584.4 270.08 642 264.8V300H498Z" fill="#5E1A26"/>
+<path d="M560 308V320M536 322H584" stroke="#E4E0DA" stroke-width="5" stroke-linecap="round"/>
+</g>
+<g transform="translate(261 246)"><circle cx="12" cy="12" r="14" fill="#FFFFFF" stroke="rgba(0,0,0,0.18)"/><g fill="none" stroke="#9C4A55" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="11" width="10" height="8" rx="2"/><path d="M9 11V8.8a3 3 0 0 1 6 0V11"/></g></g><g transform="translate(434 246)"><circle cx="12" cy="12" r="14" fill="#FFFFFF" stroke="rgba(0,0,0,0.18)"/><g fill="none" stroke="#9C4A55" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="11" width="10" height="8" rx="2"/><path d="M9 11V8.8a3 3 0 0 1 6 0V11"/></g></g><g transform="translate(348 355)"><circle cx="12" cy="12" r="14" fill="#FFFFFF" stroke="rgba(0,0,0,0.18)"/><g fill="none" stroke="#9C4A55" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="11" width="10" height="8" rx="2"/><path d="M9 11V8.8a3 3 0 0 1 6 0V11"/></g></g>
+<text x="360" y="418" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="500" fill="#141416" text-anchor="middle">Video, voice and chat go device to device, encrypted with DTLS</text>
+</svg>

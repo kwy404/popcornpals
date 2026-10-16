@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<script>(function(){var r=document.documentElement;try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches)r.classList.add('motion')}catch(e){}try{var t=localStorage.getItem('voodoo:theme');if(t&&t.charAt(0)==='"')t=JSON.parse(t);t=t==='light'?'light':'dark';r.setAttribute('data-theme',t);r.style.colorScheme=t}catch(e){r.setAttribute('data-theme','dark')}})();</script>
+<title>popcornpals: watch videos together, in sync, with friends</title>
+<meta name="description" content="Start a room, invite up to 4 friends with six words, and watch YouTube videos, your own video files or a shared screen in sync, with voice and chat. Peer to peer, no account.">
+<link rel="canonical" href="https://kwy404.github.io/popcornpals/">
+<meta name="author" content="Alexandre Kohler">
+<meta name="theme-color" content="#0A0A0B">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="popcornpals">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="popcornpals: watch videos together, in sync, with friends">
+<meta property="og:description" content="Start a room, invite up to 4 friends with six words, and watch together in sync, with voice and chat. Peer to peer, no account.">
+<meta property="og:url" content="https://kwy404.github.io/popcornpals/">
+<meta property="og:image" content="https://kwy404.github.io/popcornpals/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="popcornpals: Rocco and Pip, two raccoons, on a velvet couch in a private screening room">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="popcornpals: watch videos together, in sync, with friends">
+<meta name="twitter:description" content="Start a room, invite up to 4 friends with six words, and watch together in sync, with voice and chat. Peer to peer, no account.">
+<meta name="twitter:image" content="https://kwy404.github.io/popcornpals/og.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/monsooncss@0.2.0/dist/monsoon.min.css">
+<link rel="stylesheet" href="site/site.css">
+<script src="https://cdn.jsdelivr.net/npm/voodoojs@1.0.0/dist/voodoo.full.min.js" data-manual defer></script>
+<script type="module" src="site/site.js"></script>
+</head>
+<body class="site">
+<svg class="sprite" aria-hidden="true" focusable="false">
+<symbol id="i-play" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5v13l10.5-6.5z"/></g></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8.5z"/><path d="M13.5 3.5v5h5"/><path d="M10.5 12v5l4-2.5z"/></g></symbol>
+<symbol id="i-screen" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="12" rx="1.5"/><path d="M9 20h6"/><path d="M12 16.5V20"/><path d="M12 13.5V8"/><path d="M9.5 10.5L12 8l2.5 2.5"/></g></symbol>
+<symbol id="i-mic" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v2.5"/><path d="M9 20.5h6"/></g></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 17h-8.5l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 5 5z"/><path d="M8 9.5h8"/><path d="M8 12.5h5"/></g></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.25"/><path d="M3 19.5a6 6 0 0 1 12 0"/><path d="M15.5 5.4a3.25 3.25 0 0 1 0 6.2"/><path d="M17.5 13.9a6 6 0 0 1 3.5 5.6"/></g></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/><path d="M12 14.5v2"/></g></symbol>
+<symbol id="i-qr" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.5"/><path d="M14 17.5V20"/><path d="M17.5 17.5H20V20"/><path d="M20 14v.5"/></g></symbol>
+<symbol id="i-popcorn" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10.5l1.4 9.9a1 1 0 0 0 1 .6h7.2a1 1 0 0 0 1-.6l1.4-9.9"/><path d="M5.6 10.5a2.25 2.25 0 0 1 1.7-3.9A2.6 2.6 0 0 1 12 5a2.6 2.6 0 0 1 4.7 1.6 2.25 2.25 0 0 1 1.7 3.9z"/><path d="M10.2 11l.4 9.5"/><path d="M13.8 11l-.4 9.5"/></g></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.75"/><path d="M12 3v1.5"/><path d="M12 19.5V21"/><path d="M3 12h1.5"/><path d="M19.5 12H21"/><path d="M5.6 5.6l1.1 1.1"/><path d="M17.3 17.3l1.1 1.1"/><path d="M5.6 18.4l1.1-1.1"/><path d="M17.3 6.7l1.1-1.1"/></g></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/><path d="M17 4v3"/><path d="M15.5 5.5h3"/></g></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><path d="M12 8h.01"/></g></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11" height="11" rx="1.5"/><path d="M15.5 8.5V6A1.5 1.5 0 0 0 14 4.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/></g></symbol>
+<symbol id="i-sync" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 10a7.5 7.5 0 0 1 13.9-2.5"/><path d="M19 4v4h-4"/><path d="M19.5 14a7.5 7.5 0 0 1-13.9 2.5"/><path d="M5 20v-4h4"/><path d="M12 12h.01"/></g></symbol>
+<symbol id="i-queue" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h12"/><path d="M4 11.5h12"/><path d="M4 16.5h6.5"/><path d="M14.5 14v6l5-3z"/></g></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.5 2.6 3.5 5.4 3.5 8.5s-1 5.9-3.5 8.5c-2.5-2.6-3.5-5.4-3.5-8.5s1-5.9 3.5-8.5z"/></g></symbol>
+<symbol id="i-crown" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 17.5L3.5 8l5 4 3.5-6 3.5 6 5-4-1 9.5z"/><path d="M5 20.5h14"/></g></symbol>
+<symbol id="i-ticket" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h14a1.5 1.5 0 0 1 1.5 1.5V10a2 2 0 0 0 0 4v2.5A1.5 1.5 0 0 1 19 18H5a1.5 1.5 0 0 1-1.5-1.5V14a2 2 0 0 0 0-4z"/><path d="M14.5 6.5v1.5"/><path d="M14.5 11.25v1.5"/><path d="M14.5 16v1.5"/></g></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13.5 6.5L19 12l-5.5 5.5"/></g></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10.5"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19.5h14"/></g></symbol>
+<symbol id="i-unzip" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h6.5L18.5 8.5V19A1.5 1.5 0 0 1 17 20.5H7A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5z"/><path d="M10.5 3.5V5"/><path d="M12 6v1.5"/><path d="M10.5 8.5V10"/><path d="M12 11v1.5"/><rect x="9.75" y="14" width="3" height="3.75" rx="1"/></g></symbol>
+<symbol id="i-switch" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="10" rx="5"/><circle cx="16.5" cy="12" r="2.75"/><path d="M6.5 10.5L5 12l1.5 1.5"/><path d="M9.5 10.5L11 12l-1.5 1.5"/></g></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7A1.5 1.5 0 0 1 5 5.5h4l2 2h8A1.5 1.5 0 0 1 20.5 9v8.5A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M12 16v-5"/><path d="M9.5 13.5L12 11l2.5 2.5"/></g></symbol>
+</svg>
+<div class="grain" aria-hidden="true"></div>
+<a class="skip" href="#main">Skip to the content</a>
+
+<header class="top">
+  <a class="brand" href="./" aria-label="popcornpals home"><img src="favicon.svg" width="30" height="30" alt=""><span>popcornpals</span></a>
+  <nav class="nav" aria-label="Sections">
+    <a href="#how">How it works</a>
+    <a href="#watch">What to watch</a>
+    <a href="#private">Privacy</a>
+    <a href="#extension">Extension</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+  <div class="tools">
+    <button type="button" class="icon-btn" v-theme-toggle aria-label="Switch between dark and light" title="Switch between dark and light"><svg class="ic ti-dark" aria-hidden="true"><use href="#i-moon"/></svg><svg class="ic ti-light" aria-hidden="true"><use href="#i-sun"/></svg></button>
+    <a class="btn btn-sm top-cta" href="app/">Start a room</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="cinema" aria-labelledby="hero-title">
+    <div class="stage">
+      <div class="beam" aria-hidden="true"></div>
+      <div class="screen">
+        <div class="credits">
+          <p class="credit c1 eyebrow">popcornpals presents</p>
+          <h1 id="hero-title" class="headline"><span class="credit c2">Movie night,</span> <span class="credit c3">together, in sync.</span></h1>
+          <p class="credit c4 lede">Watch the same video at the same moment with up to 4 friends. Invite them with six words, then talk, chat and react.</p>
+          <div class="credit c5 actions">
+            <a class="btn btn-lg cta" href="app/"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg>Start a room</a>
+            <a class="btn btn-lg btn-ghost ghost" href="#how">How it works</a>
+          </div>
+          <ul class="credit c6 facts" aria-label="At a glance">
+            <li><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>Up to 5 people</li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-ticket"/></svg>No account</li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-sync"/></svg>Peer to peer</li>
+          </ul>
+        </div>
+      </div>
+      <div class="motes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="curtain curtain-l" aria-hidden="true"></div>
+      <div class="curtain curtain-r" aria-hidden="true"></div>
+      <div class="valance" aria-hidden="true"></div>
+      <div class="seats">
+        <img class="art-dark" src="assets/site/seats-dark.svg" width="1000" height="640" alt="Rocco and Pip, two raccoons, watching from a row of five cinema seats, with a bucket of popcorn between them">
+        <img class="art-light" src="assets/site/seats.svg" width="1000" height="640" alt="Rocco and Pip, two raccoons, watching from a row of five cinema seats, with a bucket of popcorn between them">
+      </div>
+    </div>
+  </section>
+
+  <section class="reel" id="how" aria-labelledby="how-h">
+    <header class="reel-head">
+      <p class="reel-no"><span>Reel 1</span>How it works</p>
+      <h2 id="how-h">Three frames to movie night.</h2>
+    </header>
+    <ol class="strip">
+      <li class="frame">
+        <span class="frame-no" aria-hidden="true">01</span>
+        <div class="frame-art frame-art-free">
+          <img class="art-dark" src="assets/mascot-dark.svg" width="640" height="480" alt="" loading="lazy">
+          <img class="art-light" src="assets/mascot.svg" width="640" height="480" alt="" loading="lazy">
+        </div>
+        <h3>Start a room</h3>
+        <p>Open popcornpals and press Start a room. No sign up and nothing to download. You are the host.</p>
+      </li>
+      <li class="frame">
+        <span class="frame-no" aria-hidden="true">02</span>
+        <div class="frame-art">
+          <img class="art-dark" src="assets/illustrations/six-words-dark.svg" width="800" height="560" alt="" loading="lazy">
+          <img class="art-light" src="assets/illustrations/six-words.svg" width="800" height="560" alt="" loading="lazy">
+        </div>
+        <h3>Share six words, a QR code or a link</h3>
+        <p>Press the big invite button. Your friend types the six words, scans the code or opens the link, and all three carry the same words. Each invite works once, for 10 minutes.</p>
+      </li>
+      <li class="frame">
+        <span class="frame-no" aria-hidden="true">03</span>
+        <div class="frame-art">
+          <img class="art-dark" src="assets/illustrations/in-sync-dark.svg" width="800" height="560" alt="" loading="lazy">
+          <img class="art-light" src="assets/illustrations/in-sync.svg" width="800" height="560" alt="" loading="lazy">
+        </div>
+        <h3>Press play</h3>
+        <p>Play, pause and seek stay in step on every screen. Anyone can take the remote unless the host locks it, and a friend who joins late lands on the right moment.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="reel" id="ticket" aria-labelledby="ticket-h">
+    <header class="reel-head">
+      <p class="reel-no"><span>Reel 2</span>The ticket</p>
+      <h2 id="ticket-h">Six words are the ticket.</h2>
+      <p>No account. You share six words, as words, a QR code or a link, and a second set of six proves the right friend came in.</p>
+    </header>
+    <div class="strip strip-single">
+      <div class="frame frame-ticket" v-data="{ side: 'invite' }">
+        <span class="frame-no" aria-hidden="true">04</span>
+        <div class="ticket-tabs" role="group" aria-label="Which words the ticket shows">
+          <button type="button" class="ticket-tab" :class="{ on: side === 'invite' }" :aria-pressed="side === 'invite' ? 'true' : 'false'" @click="side = 'invite'">1. Invite</button>
+          <button type="button" class="ticket-tab" :class="{ on: side === 'check' }" :aria-pressed="side === 'check' ? 'true' : 'false'" @click="side = 'check'">2. Check in</button>
+        </div>
+        <div class="ticket" :class="{ 'is-check': side === 'check' }">
+          <div class="ticket-main">
+            <p class="ticket-kicker">Admit one friend</p>
+            <p class="ticket-title">popcornpals</p>
+            <ol class="words words-invite" aria-label="Example invite words">
+              <li><span>1</span>dream</li><li><span>2</span>foot</li><li><span>3</span>word</li><li><span>4</span>divide</li><li><span>5</span>drastic</li><li><span>6</span>about</li>
+            </ol>
+            <ol class="words words-check" aria-label="Example check in words">
+              <li><span>1</span>velvet</li><li><span>2</span>orbit</li><li><span>3</span>lemon</li><li><span>4</span>harbor</li><li><span>5</span>pilot</li><li><span>6</span>cherry</li>
+            </ol>
+            <p class="ticket-cap cap-invite">Your friend types these words, scans the QR code, or opens the invite link. A link that opens joins the room at once.</p>
+            <p class="ticket-cap cap-check">Your friend reads these back to you. You type them, and the door opens.</p>
+          </div>
+          <div class="ticket-stub">
+            <svg class="ic stub-ic" aria-hidden="true"><use href="#i-qr"/></svg>
+            <p class="stub-row"><span>Room</span>up to 5</p>
+            <p class="stub-row"><span>Valid</span>once, 10 min</p>
+            <p class="stub-row"><span>Link</span>#join=</p>
+          </div>
+        </div>
+        <p class="ticket-note">Example words. Every invite makes new ones. In the link, the words sit after the #, a part browsers never send to any server. They meet on public relays, encrypted with a key made from the words, and three wrong check ins turn the guest away.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reel" id="watch" aria-labelledby="watch-h">
+    <header class="reel-head">
+      <p class="reel-no"><span>Reel 3</span>What you can watch</p>
+      <h2 id="watch-h">Four ways to fill the screen.</h2>
+    </header>
+    <ol class="strip">
+      <li class="frame">
+        <span class="frame-no" aria-hidden="true">05</span>
+        <span class="frame-ic" aria-hidden="true"><svg class="ic"><use href="#i-play"/></svg></span>
+        <h3>YouTube videos</h3>
+        <p>Paste a link. Everyone loads the official embedded player, and play, pause, seek and speed stay in sync.</p>
+      </li>
+      <li class="frame">
+        <span class="frame-no" aria-hidden="true">06</span>
+        <span class="frame-ic" aria-hidden="true"><svg class="ic"><use href="#i-file"/></svg></span>
+        <h3>Your video files</h3>
+        <p>One person picks the file, everyone watches. It streams from that person's device over the peer connections, so picture quality depends on their upload speed, shared by every guest.</p>
+        <ul class="ticks">
+          <li><strong>Best quality mode.</strong> If everyone has the same file, each person opens it on their own device. A quick fingerprint checks the files match, and only sync messages travel.</li>
+          <li><strong>Subtitles.</strong> Load an .srt or .vtt file and everyone sees them.</li>
+        </ul>
+      </li>
+      <li class="frame">
+        <span class="frame-no" aria-hidden="true">07</span>
+        <div class="frame-art">
+          <img class="art-dark" src="assets/illustrations/black-screen-dark.svg" width="800" height="560" alt="A shared screen that shows only black with a small lock, and Pip shrugging" loading="lazy">
+          <img class="art-light" src="assets/illustrations/black-screen.svg" width="800" height="560" alt="A shared screen that shows only black with a small lock, and Pip shrugging" loading="lazy">
+        </div>
+        <h3>Screen share, for anything else</h3>
+        <p>Share a tab, a window or the whole screen.</p>
+        <p class="note"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><span>Many streaming services block screen capture of protected video, so your friends would see a black picture. And sharing never replaces a subscription: every viewer always needs their own.</span></p>
+      </li>
+      <li class="frame">
+        <span class="frame-no" aria-hidden="true">08</span>
+        <span class="frame-ic" aria-hidden="true"><svg class="ic"><use href="#i-popcorn"/></svg></span>
+        <h3>Streaming sites, with the extension</h3>
+        <p>The optional browser extension keeps each person's own player on a streaming site in step: play, pause and seek. Everyone signs in with their own account and subscription.</p>
+        <p class="note"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><span>It never captures, records, downloads or re-streams video, and never bypasses copy protection. Some players refuse seeking from outside; then only play and pause sync.</span></p>
+        <a class="frame-link" href="#extension">Get the extension<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </li>
+    </ol>
+  </section>
+
+  <section class="reel" id="together" aria-labelledby="together-h">
+    <header class="reel-head">
+      <p class="reel-no"><span>Reel 4</span>Together</p>
+      <h2 id="together-h">The same couch, in different homes.</h2>
+    </header>
+    <ol class="strip">
+      <li class="frame">
+        <span class="frame-no" aria-hidden="true">09</span>
+        <div class="mock mock-voice" aria-hidden="true">
+          <span class="seat-head talking"><img src="assets/mascot-head-dark.svg" width="64" height="64" alt=""></span>
+          <span class="seat-head"><img src="assets/mascot-head-dark.svg" width="64" height="64" alt=""></span>
+          <span class="seat-head muted-head"><img src="assets/mascot-head-dark.svg" width="64" height="64" alt=""><svg class="ic"><use href="#i-mic"/></svg></span>
+        </div>
+        <h3>Voice chat</h3>
+        <p>Talk like you are on the same couch. Mute whenever you like. Noise suppression fades fans, hum and keyboard clicks.</p>
+      </li>
+      <li class="frame">
+        <span class="frame-no" aria-hidden="true">10</span>
+        <div class="mock mock-chat" aria-hidden="true">
+          <p class="bubble"><b>Pip</b>that ending though</p>
+          <p class="bubble bubble-reply"><span class="quote">Pip: that ending though</span><b>Rocco</b>go back to <span class="stamp">1:24:07</span></p>
+        </div>
+        <h3>Chat with replies</h3>
+        <p>Reply to a message, react to it, and drop a time like 1:24:07: one click takes everyone to that moment.</p>
+      </li>
+      <li class="frame">
+        <span class="frame-no" aria-hidden="true">11</span>
+        <div class="mock mock-react" aria-hidden="true">
+          <div class="mini-screen">
+            <img class="fly f1" src="assets/icons/reactions/react-popcorn.svg" width="24" height="24" alt="">
+            <img class="fly f2" src="assets/icons/reactions/react-heart.svg" width="24" height="24" alt="">
+            <img class="fly f3" src="assets/icons/reactions/react-laugh.svg" width="24" height="24" alt="">
+            <img class="fly f4" src="assets/icons/reactions/react-wow.svg" width="24" height="24" alt="">
+            <img class="fly f5" src="assets/icons/reactions/react-clap.svg" width="24" height="24" alt="">
+          </div>
+        </div>
+        <h3>Reactions on the screen</h3>
+        <p>Tap a reaction and it floats up over the picture for everyone.</p>
+      </li>
+      <li class="frame">
+        <span class="frame-no" aria-hidden="true">12</span>
+        <div class="mock mock-cams" aria-hidden="true">
+          <div class="mini-screen mini-wide"></div>
+          <div class="cam-row"><span><img src="assets/mascot-head-dark.svg" width="40" height="40" alt=""></span><span><img src="assets/mascot-head-dark.svg" width="40" height="40" alt=""></span><span class="cam-off"></span><span class="cam-off"></span></div>
+        </div>
+        <h3>Camera seats</h3>
+        <p>Turn on your camera if you want to, and you show up as a small seat under the screen.</p>
+      </li>
+      <li class="frame frame-list">
+        <span class="frame-no" aria-hidden="true">13</span>
+        <h3>Also in the room</h3>
+        <ul class="chips">
+          <li><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>Who is watching</li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-queue"/></svg>A shared queue</li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-crown"/></svg>Host lock for the controls</li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-globe"/></svg>English and Portuguese</li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>Installs like an app</li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg>Dark, with a light option</li>
+        </ul>
+      </li>
+    </ol>
+  </section>
+
+  <section class="reel" id="private" aria-labelledby="private-h">
+    <header class="reel-head">
+      <p class="reel-no"><span>Reel 5</span>Private by design</p>
+      <h2 id="private-h">No server of ours in the middle.</h2>
+    </header>
+    <div class="strip strip-single">
+      <div class="frame">
+        <span class="frame-no" aria-hidden="true">14</span>
+        <div class="frame-art frame-art-free">
+          <img class="art-dark" src="assets/site/private-dark.svg" width="720" height="430" alt="Three devices connected straight to each other with encrypted links, and a public relay above them that only passes the encrypted pairing handshake" loading="lazy">
+          <img class="art-light" src="assets/site/private.svg" width="720" height="430" alt="Three devices connected straight to each other with encrypted links, and a public relay above them that only passes the encrypted pairing handshake" loading="lazy">
+        </div>
+        <ul class="ticks ticks-wide">
+          <li><strong>Peer to peer.</strong> Video, voice and chat travel straight between your devices over WebRTC, encrypted with DTLS. There is no server of ours and no account.</li>
+          <li><strong>Relays only see ciphertext.</strong> The six words meet on public MQTT relays, and only encrypted handshake data passes there. An invite link keeps the words in the part after the #, which is never sent to a server.</li>
+          <li><strong>Nothing uploaded to a server.</strong> A video file streams from the person who picked it, straight to the room.</li>
+          <li><strong>Strict networks.</strong> Public STUN servers help devices find each other. Some networks block direct connections; then you can add your own TURN server in the app settings.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="boxoffice" id="extension" aria-labelledby="ext-h">
+    <div class="box-head">
+      <p class="reel-no"><span>Optional</span>For streaming sites</p>
+      <h2 id="ext-h">The sync extension</h2>
+      <p class="box-lede">Works with the video player on many streaming sites. It only plays, pauses and seeks each person's own player, so everyone needs their own subscription. It never captures, records or re-streams video, and never bypasses copy protection.</p>
+      <a class="btn btn-xl cta ext-btn" data-ext="href" href="extension/popcornpals-extension-0.1.0.zip" download><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>Download the extension</a>
+      <p class="ext-meta">Version <span data-ext="version">0.1.0</span><span class="dot" aria-hidden="true"></span><span data-ext="size">38 KB</span><span class="dot" aria-hidden="true"></span>zip file</p>
+      <div class="hash">
+        <span class="hash-label">SHA-256</span>
+        <code id="ext-sha" data-ext="sha256">3645d0548ecdbb8fa06cc38fa3d320b89cd69808d5bbbcafcc45d934e15d5313</code>
+        <button type="button" class="hash-copy" v-copy-from="#ext-sha" aria-label="Copy the SHA-256 checksum"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span class="copy-text">Copy</span></button>
+      </div>
+      <p class="ext-support">Works on Chromium-based browsers. Firefox requires signed extensions, so it is not supported there yet. It is not in any store: you install it from this file.</p>
+    </div>
+
+    <h3 class="steps-h">Install it once</h3>
+    <ol class="install-steps">
+      <li class="install-step">
+        <p class="step-top"><span class="step-ic" aria-hidden="true"><svg class="ic"><use href="#i-unzip"/></svg></span><span class="step-no">Step 1</span></p>
+        <h4>Unzip the file</h4>
+        <p>Unzip the download. You get a folder named <code>popcornpals-extension</code>. Keep it where it is: the browser loads the extension from it.</p>
+        <div class="shot">
+          <img class="art-dark" src="assets/site/install-1-dark.svg" width="560" height="340" alt="A downloads folder: the zip file is unzipped into a folder named popcornpals-extension" loading="lazy">
+          <img class="art-light" src="assets/site/install-1.svg" width="560" height="340" alt="A downloads folder: the zip file is unzipped into a folder named popcornpals-extension" loading="lazy">
+        </div>
+      </li>
+      <li class="install-step">
+        <p class="step-top"><span class="step-ic" aria-hidden="true"><svg class="ic"><use href="#i-switch"/></svg></span><span class="step-no">Step 2</span></p>
+        <h4>Turn on developer mode</h4>
+        <p>Open the extensions page of your browser from its menu, and turn on the developer mode switch.</p>
+        <div class="shot">
+          <img class="art-dark" src="assets/site/install-2-dark.svg" width="560" height="340" alt="The extensions page of the browser, with the developer mode switch turned on" loading="lazy">
+          <img class="art-light" src="assets/site/install-2.svg" width="560" height="340" alt="The extensions page of the browser, with the developer mode switch turned on" loading="lazy">
+        </div>
+      </li>
+      <li class="install-step">
+        <p class="step-top"><span class="step-ic" aria-hidden="true"><svg class="ic"><use href="#i-folder"/></svg></span><span class="step-no">Step 3</span></p>
+        <h4>Load the unpacked folder</h4>
+        <p>Choose Load unpacked and select the <code>popcornpals-extension</code> folder you unzipped.</p>
+        <div class="shot">
+          <img class="art-dark" src="assets/site/install-3-dark.svg" width="560" height="340" alt="Load unpacked opens a folder picker, where the popcornpals-extension folder is selected" loading="lazy">
+          <img class="art-light" src="assets/site/install-3.svg" width="560" height="340" alt="Load unpacked opens a folder picker, where the popcornpals-extension folder is selected" loading="lazy">
+        </div>
+      </li>
+    </ol>
+
+    <div class="then">
+      <h3 class="steps-h">Then, on movie night</h3>
+      <div class="shot shot-wide">
+        <img class="art-dark" src="assets/site/install-4-dark.svg" width="560" height="340" alt="On the streaming site tab, the popcornpals button in the toolbar opens a small panel with the button Sync this tab with my room" loading="lazy">
+        <img class="art-light" src="assets/site/install-4.svg" width="560" height="340" alt="On the streaming site tab, the popcornpals button in the toolbar opens a small panel with the button Sync this tab with my room" loading="lazy">
+      </div>
+      <ol class="then-list">
+        <li>Keep your popcornpals room open, and open the video on the streaming site in another tab, signed in to your own account.</li>
+        <li>Click the popcornpals button in the browser toolbar.</li>
+        <li>Choose <strong>Sync this tab with my room</strong>. Everyone in the room does the same on their own device.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="faq" id="faq" aria-labelledby="faq-h">
+    <header class="reel-head">
+      <p class="reel-no"><span>Intermission</span>Questions</p>
+      <h2 id="faq-h">Before the lights go down.</h2>
+    </header>
+    <div class="accordion faq-list">
+      <details class="collapse" name="faq">
+        <summary class="collapse-title">Do my friends need the video file?</summary>
+        <div class="collapse-content"><p>No. One person picks the file and everyone watches it, streamed from that person's device. If everyone already has the same file, best quality mode plays each person's own copy and only sync messages travel.</p></div>
+      </details>
+      <details class="collapse" name="faq">
+        <summary class="collapse-title">Why do my friends see a black screen when I share some services?</summary>
+        <div class="collapse-content"><p>Many streaming services block screen capture of protected video, so the shared picture turns black. popcornpals cannot change that. Use the extension instead: everyone plays the video on the site with their own account and subscription.</p></div>
+      </details>
+      <details class="collapse" name="faq">
+        <summary class="collapse-title">How many people can watch together?</summary>
+        <div class="collapse-content"><p>Up to 5 people in a room: you and 4 friends.</p></div>
+      </details>
+      <details class="collapse" name="faq">
+        <summary class="collapse-title">Is it private?</summary>
+        <div class="collapse-content"><p>Video, voice and chat go straight between your devices, encrypted with DTLS. There is no account and no server of ours. The public relays used for the six words only pass encrypted handshake data.</p></div>
+      </details>
+      <details class="collapse" name="faq">
+        <summary class="collapse-title">What if we cannot connect?</summary>
+        <div class="collapse-content"><p>Some strict networks, often at work or school, block direct connections. Try another network, or add your own TURN server in the app settings so the connection can be relayed through it.</p></div>
+      </details>
+      <details class="collapse" name="faq">
+        <summary class="collapse-title">Do I need to install anything?</summary>
+        <div class="collapse-content"><p>No. popcornpals runs in the browser, and you can install it as an app if you like. The extension is optional and only needed to sync a streaming site.</p></div>
+      </details>
+    </div>
+    <div class="last-call">
+      <p>The seats are free. Bring popcorn.</p>
+      <a class="btn btn-lg cta" href="app/"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg>Start a room</a>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="foot-in">
+    <div class="foot-brand">
+      <a class="brand" href="./"><img src="favicon.svg" width="30" height="30" alt=""><span>popcornpals</span></a>
+      <p>A serverless watch party: the same video, at the same moment, with voice and chat. Peer to peer, no account.</p>
+      <p class="foot-made">Made by <strong>Alexandre Kohler</strong> (<a href="https://github.com/kwy404" rel="me noopener">GitHub</a> and <a href="https://www.linkedin.com/in/alexandre-silva-173687256/" rel="me noopener">LinkedIn</a>).</p>
+      <p class="foot-built">Built with <a href="https://kwy404.github.io/monsoon/" rel="noopener">Monsoon</a>. Interactive parts built with <a href="https://kwy404.github.io/Voodoo.js/" rel="noopener">Voodoo.js</a>.</p>
+      <p class="foot-links"><a href="app/">Open the app</a><a href="#extension">The extension</a><a href="https://github.com/kwy404/popcornpals" rel="noopener">Source on GitHub</a></p>
+    </div>
+    <div class="foot-more">
+      <h2 class="foot-h">More from kwy404</h2>
+      <ul>
+        <li><a href="https://kwy404.github.io/monsoon/" rel="noopener">Monsoon</a><small>CSS framework with no build step</small></li>
+        <li><a href="https://kwy404.github.io/Voodoo.js/" rel="noopener">Voodoo.js</a><small>reactive HTML attributes</small></li>
+        <li><a href="https://kwy404.github.io/kastor/" rel="noopener">kastor</a><small>typed ORM for almost every database</small></li>
+        <li><a href="https://kwy404.github.io/fontsketch/" rel="noopener">fontsketch</a><small>turn your handwriting into a font</small></li>
+        <li><a href="https://kwy404.github.io/filefinch/" rel="noopener">filefinch</a><small>send files straight between your devices</small></li>
+        <li><a href="https://kwy404.github.io/howlden/" rel="noopener">howlden</a><small>serverless peer to peer voice and chat rooms</small></li>
+        <li><a href="https://kwy404.github.io/installkite/" rel="noopener">installkite</a><small>make any site an installable PWA</small></li>
+        <li><a href="https://kwy404.github.io/a11ymedic/" rel="noopener">a11ymedic</a><small>accessibility checker with fixes</small></li>
+        <li><a href="https://kwy404.github.io/cookieowl/" rel="noopener">cookieowl</a><small>cookie consent for LGPD and GDPR</small></li>
+      </ul>
+    </div>
+  </div>
+  <p class="foot-legal">MIT License. Free and open source, no tracking.</p>
+</footer>
+</body>
+</html>

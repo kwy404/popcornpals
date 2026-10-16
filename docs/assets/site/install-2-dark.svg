@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 340" width="560" height="340" role="img">
+<title>The extensions page of the browser, with the developer mode switch turned on</title>
+<rect x="8" y="8" width="544" height="324" rx="14" fill="#111113" stroke="rgba(255,255,255,0.16)"/>
+<path d="M8 22A14 14 0 0 1 22 8H538A14 14 0 0 1 552 22V44H8Z" fill="#1E1E22"/>
+<circle cx="28" cy="27" r="4.5" fill="#3A3A40"/><circle cx="43" cy="27" r="4.5" fill="#3A3A40"/><circle cx="58" cy="27" r="4.5" fill="#3A3A40"/>
+<path d="M80 44V24A6 6 0 0 1 86 18H206A6 6 0 0 1 212 24V44Z" fill="#111113"/>
+<text x="94" y="35" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11.5" font-weight="400" fill="#8A8A8F" text-anchor="start">Extensions</text>
+<rect x="20" y="54" width="520" height="24" rx="12" fill="#1E1E22"/>
+<rect x="36" y="63" width="120" height="6" rx="3" fill="#3A3A40"/>
+
+<path d="M8 88H552" stroke="rgba(255,255,255,0.10)"/>
+<text x="36" y="126" font-family="ui-serif, 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif" font-size="22" font-weight="600" fill="#EDEDED" text-anchor="start">Extensions</text>
+<text x="400" y="124" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="500" fill="#EDEDED" text-anchor="end">Developer mode</text>
+<rect x="408" y="104" width="56" height="34" rx="17" fill="none" stroke="#C9A1A6" stroke-opacity="0.35" stroke-width="4"/>
+<rect x="417" y="110" width="38" height="22" rx="11" fill="#7A2633"/><circle cx="444" cy="121" r="8" fill="#F3E9EA"/>
+<path transform="translate(446 124)" d="M0 0L0 17L4.5 13L7.5 20L10.5 18.7L7.6 12H13.5Z" fill="#EDEDED" stroke="#0A0A0B" stroke-width="1.4" stroke-linejoin="round"/>
+<path d="M8 152H552" stroke="rgba(255,255,255,0.10)"/>
+<rect x="36" y="172" width="236" height="132" rx="12" fill="#17171A" stroke="rgba(255,255,255,0.10)"/>
+<rect x="288" y="172" width="236" height="132" rx="12" fill="#17171A" stroke="rgba(255,255,255,0.10)"/>
+<rect x="54" y="192" width="30" height="30" rx="8" fill="#26262B"/><rect x="96" y="196" width="110" height="8" rx="4" fill="#3A3A40"/><rect x="96" y="212" width="70" height="6" rx="3" fill="#26262B"/>
+<rect x="54" y="238" width="190" height="6" rx="3" fill="#26262B"/><rect x="54" y="252" width="150" height="6" rx="3" fill="#26262B"/>
+<rect x="218" y="272" width="38" height="22" rx="11" fill="#3A3A40"/><circle cx="229" cy="283" r="8" fill="#111113"/>
+<rect x="306" y="192" width="30" height="30" rx="8" fill="#26262B"/><rect x="348" y="196" width="96" height="8" rx="4" fill="#3A3A40"/><rect x="348" y="212" width="60" height="6" rx="3" fill="#26262B"/>
+<rect x="306" y="238" width="190" height="6" rx="3" fill="#26262B"/><rect x="306" y="252" width="120" height="6" rx="3" fill="#26262B"/>
+<rect x="470" y="272" width="38" height="22" rx="11" fill="#3A3A40"/><circle cx="481" cy="283" r="8" fill="#111113"/>
+</svg>

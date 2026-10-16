@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 72" width="200" height="72" preserveAspectRatio="none">
+<defs>
+<linearGradient id="fold" x1="0" y1="0" x2="25" y2="0" gradientUnits="userSpaceOnUse" spreadMethod="reflect"><stop offset="0" stop-color="#1A070B"/><stop offset="0.55" stop-color="#3A1018"/><stop offset="1" stop-color="#561824"/></linearGradient>
+<linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0.45"/><stop offset="1" stop-color="#000" stop-opacity="0.1"/></linearGradient>
+</defs>
+<path d="M0 0H200V40C180 74 120 74 100 40C80 74 20 74 0 40Z" fill="url(#fold)"/>
+<path d="M0 0H200V40C180 74 120 74 100 40C80 74 20 74 0 40Z" fill="url(#shade)"/>
+<path d="M0 40C20 74 80 74 100 40C120 74 180 74 200 40" fill="none" stroke="#CDBB8E" stroke-opacity="0.35" stroke-width="1.5"/>
+</svg>

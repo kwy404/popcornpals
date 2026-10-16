@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<meta name="robots" content="noindex">
+<script>(function(){var r=document.documentElement;try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches)r.classList.add('motion')}catch(e){}try{var t=localStorage.getItem('voodoo:theme');if(t&&t.charAt(0)==='"')t=JSON.parse(t);t=t==='light'?'light':'dark';r.setAttribute('data-theme',t);r.style.colorScheme=t}catch(e){r.setAttribute('data-theme','dark')}})();</script>
+<title>Page not found: popcornpals</title>
+<meta name="theme-color" content="#0A0A0B">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/monsooncss@0.2.0/dist/monsoon.min.css">
+<script src="https://cdn.jsdelivr.net/npm/voodoojs@1.0.0/dist/voodoo.full.min.js" data-manual defer></script>
+<!-- The host serves this page for a missing path at any depth, so the
+     relative files load from the site folder found in the address. -->
+<script>(function(){var p=location.pathname,k='popcornpals'+String.fromCharCode(47),i=p.indexOf(k);if(i>=0){var b=document.createElement('base');b.href=p.slice(0,i+k.length);document.head.appendChild(b)}document.write('<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="site/site.css"><script type="module" src="site/site.js"><'+'/script>')})();</script>
+</head>
+<body class="site lost">
+<svg class="sprite" aria-hidden="true" focusable="false">
+<symbol id="i-play" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5v13l10.5-6.5z"/></g></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.75"/><path d="M12 3v1.5"/><path d="M12 19.5V21"/><path d="M3 12h1.5"/><path d="M19.5 12H21"/><path d="M5.6 5.6l1.1 1.1"/><path d="M17.3 17.3l1.1 1.1"/><path d="M5.6 18.4l1.1-1.1"/><path d="M17.3 6.7l1.1-1.1"/></g></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><g stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/><path d="M17 4v3"/><path d="M15.5 5.5h3"/></g></symbol>
+</svg>
+<div class="grain" aria-hidden="true"></div>
+<a class="skip" href="#main">Skip to the content</a>
+
+<header class="top">
+  <a class="brand" href="./" aria-label="popcornpals home"><span>popcornpals</span></a>
+  <div class="tools">
+    <button type="button" class="icon-btn" v-theme-toggle aria-label="Switch between dark and light" title="Switch between dark and light"><svg class="ic ti-dark" aria-hidden="true"><use href="#i-moon"/></svg><svg class="ic ti-light" aria-hidden="true"><use href="#i-sun"/></svg></button>
+    <a class="btn btn-sm top-cta" href="app/">Start a room</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="cinema" aria-labelledby="lost-title">
+    <div class="stage">
+      <div class="beam" aria-hidden="true"></div>
+      <div class="screen">
+        <div class="credits">
+          <p class="credit c1 eyebrow">Error 404</p>
+          <h1 id="lost-title" class="headline"><span class="credit c2">This reel</span> <span class="credit c3">is missing.</span></h1>
+          <p class="credit c4 lede">The page you asked for is not in the program. The show goes on in the lobby.</p>
+          <div class="credit c5 actions">
+            <a class="btn btn-lg cta" href="./"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg>Back to the lobby</a>
+            <a class="btn btn-lg btn-ghost ghost" href="app/">Start a room</a>
+          </div>
+        </div>
+      </div>
+      <div class="curtain curtain-l" aria-hidden="true"></div>
+      <div class="curtain curtain-r" aria-hidden="true"></div>
+      <div class="valance" aria-hidden="true"></div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 340" width="560" height="340" role="img">
+<title>A downloads folder: the zip file is unzipped into a folder named popcornpals-extension</title>
+<rect x="8" y="8" width="544" height="324" rx="14" fill="#111113" stroke="rgba(255,255,255,0.16)"/>
+<path d="M8 22A14 14 0 0 1 22 8H538A14 14 0 0 1 552 22V48H8Z" fill="#1E1E22"/>
+<circle cx="28" cy="28" r="4.5" fill="#3A3A40"/><circle cx="43" cy="28" r="4.5" fill="#3A3A40"/><circle cx="58" cy="28" r="4.5" fill="#3A3A40"/>
+<path transform="translate(80 17)" d="M0 4A3 3 0 0 1 3 1H10L13 4H25A3 3 0 0 1 28 7V20A3 3 0 0 1 25 23H3A3 3 0 0 1 0 20Z" fill="#3A3A40" opacity="0.85"/><text x="116" y="33" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" fill="#EDEDED" text-anchor="start">Downloads</text>
+<path d="M8 48H552" stroke="rgba(255,255,255,0.10)"/>
+<rect x="36" y="74" width="488" height="58" rx="10" fill="#17171A" stroke="rgba(255,255,255,0.10)"/>
+<g transform="translate(56 88)">
+<path d="M2 0H17L24 7V28A2 2 0 0 1 22 30H2A2 2 0 0 1 0 28V2A2 2 0 0 1 2 0Z" fill="#26262B" stroke="rgba(255,255,255,0.16)"/>
+<path d="M10 2V4M12 5V7M10 8V10M12 11V13M10 14V16" stroke="#8A8A8F" stroke-width="2"/>
+<rect x="8" y="17" width="6" height="7" rx="1.5" fill="none" stroke="#8A8A8F" stroke-width="1.5"/>
+</g>
+<text x="96" y="102" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="500" fill="#EDEDED" text-anchor="start">popcornpals-extension-0.1.0.zip</text>
+<text x="96" y="120" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11.5" font-weight="400" fill="#8A8A8F" text-anchor="start">Compressed file</text>
+<text x="500" y="108" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="400" fill="#8A8A8F" text-anchor="end">38 KB</text>
+<path d="M280 146V188" stroke="#C9A1A6" stroke-width="1.6" stroke-dasharray="3 5" stroke-linecap="round"/>
+<path d="M272 182L280 192L288 182" fill="none" stroke="#C9A1A6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="302" y="154" width="62" height="24" rx="12" fill="#1E1E22"/>
+<text x="333" y="170" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="400" fill="#8A8A8F" text-anchor="middle">unzip</text>
+<rect x="36" y="204" width="488" height="58" rx="10" fill="#17171A" stroke="#C9A1A6" stroke-width="1.6"/>
+<rect x="31" y="199" width="498" height="68" rx="14" fill="none" stroke="#C9A1A6" stroke-opacity="0.25" stroke-width="4"/>
+<path transform="translate(54 220)" d="M0 4A3 3 0 0 1 3 1H10L13 4H25A3 3 0 0 1 28 7V20A3 3 0 0 1 25 23H3A3 3 0 0 1 0 20Z" fill="#CDBB8E" opacity="0.85"/>
+<text x="96" y="232" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="600" fill="#EDEDED" text-anchor="start">popcornpals-extension</text>
+<text x="96" y="250" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11.5" font-weight="400" fill="#8A8A8F" text-anchor="start">Folder</text>
+<path transform="translate(470 236)" d="M0 0L0 17L4.5 13L7.5 20L10.5 18.7L7.6 12H13.5Z" fill="#EDEDED" stroke="#0A0A0B" stroke-width="1.4" stroke-linejoin="round"/>
+<rect x="36" y="282" width="210" height="8" rx="4" fill="#1E1E22"/><rect x="36" y="298" width="140" height="8" rx="4" fill="#1E1E22"/>
+</svg>
