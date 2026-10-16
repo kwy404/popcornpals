@@ -40,7 +40,10 @@
     "extension": "node scripts/build-extension.mjs",
     "extension:check": "node scripts/build-extension.mjs --check",
     "e2e:ext": "node test/e2e-extension.mjs",
-    "art": "node scripts/render-art.mjs"
+    "e2e:yt": "node test/e2e-youtube.mjs",
+    "art": "node scripts/render-art.mjs",
+    "readme:art": "node scripts/readme-art.mjs",
+    "readme:check": "node scripts/readme-art.mjs --check"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

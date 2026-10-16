@@ -32,6 +32,8 @@ jobs:
 
       - run: npm run extension:check
 
+      - run: npm run readme:check
+
       - run: npm test
 
       - run: npm run links
