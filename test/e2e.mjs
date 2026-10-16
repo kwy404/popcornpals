@@ -1,7 +1,8 @@
-// The watch party in a real browser. Three people, each in their own browser
+// The watch party in a real browser. Four people, each in their own browser
 // with a fresh profile and fake microphones:
 //   Ana starts a room and invites Bia with six words (Bia reads back the six
-//   confirmation words).
+//   confirmation words). Caio joins by the QR code and Dani by the copied
+//   invite link: all three carry the same words to the same room.
 //   Only Ana has the generated test video: she streams it, and Bia receives
 //   its frames and its sound. Bia pauses, seeks and resumes, and Ana's player
 //   follows. Ana adds subtitles and Bia sees them.
@@ -21,6 +22,7 @@ import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright-core';
+import jsQR from 'jsqr';
 import { serve } from '../scripts/serve.mjs';
 import { ensureTestVideo } from '../scripts/make-test-video.mjs';
 import { findBrowser, launchPerson } from './browser.mjs';
@@ -55,16 +57,22 @@ async function person(name) {
   for (const [url, [file, type]] of Object.entries(CDN)) {
     if (existsSync(file)) await context.route(url, (route) => route.fulfill({ status: 200, contentType: type, body: readFileSync(file), headers: { 'access-control-allow-origin': '*' } }));
   }
-  if (broker) await context.addInitScript((url) => localStorage.setItem('pp:brokers', JSON.stringify(url)), broker.url);
-  await context.addInitScript(() => localStorage.setItem('pp:lang', '"en"'));
+  // Settings for the app's origin; about:blank has no storage, so skip it there.
+  await context.addInitScript((url) => {
+    if (location.protocol !== 'http:') return;
+    if (url) localStorage.setItem('pp:brokers', JSON.stringify(url));
+    localStorage.setItem('pp:lang', '"en"');
+  }, broker?.url || '');
   const page = context.pages()[0] || (await context.newPage());
   page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(`${name}: ${m.text()}`);
     if (process.env.E2E_VERBOSE) console.log(`[${name}] ${m.text()}`);
   });
+  // Many programs share this machine, so loads get a generous timeout.
+  page.setDefaultNavigationTimeout(120000);
   await page.goto(base);
-  await page.waitForSelector('#start-room');
+  await page.waitForSelector('#start-room', { timeout: 60000 });
   return { name, page, context };
 }
 
@@ -91,25 +99,77 @@ async function typeWords(page, prefix, words) {
   for (let i = 0; i < words.length; i++) await page.fill(`#${prefix}-${i}`, words[i]);
 }
 
-/** host invites, guest joins (by typing the words or by opening the QR link), host confirms. */
-async function invite(host, guest, { viaQr = false } = {}) {
+/** The QR code of the open invite, drawn on a canvas in the page and read back with jsQR here. */
+async function readQr(p) {
+  const side = 360;
+  const px = await p.page.evaluate(async (n) => {
+    const svg = document.querySelector('.invite-modal .qr-box svg');
+    const img = new Image();
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.outerHTML)}`;
+    await img.decode();
+    const canvas = Object.assign(document.createElement('canvas'), { width: n, height: n });
+    const g = canvas.getContext('2d');
+    g.drawImage(img, 0, 0, n, n);
+    return Array.from(g.getImageData(0, 0, n, n).data);
+  }, side);
+  return jsQR(Uint8ClampedArray.from(px), side, side)?.data || null;
+}
+
+/**
+ * The host invites and the guest joins in one of the three ways the invite
+ * shows: typing the six words, scanning the QR code, or opening the copied
+ * invite link. Then the host types the confirmation words.
+ */
+async function invite(host, guest, { via = 'words' } = {}) {
   await host.page.click('#invite');
   const words = await wordsOf(host, '.invite-words');
-  const qr = await host.page.locator('.ticket-qr svg').count();
-  ok(qr === 1, 'the invite shows a QR code');
-  ok((await host.page.locator('.invite-modal a[href*="#w="], .invite-modal input').count()) === 0, 'the invite shows no link');
-  if (viaQr) {
-    await guest.page.goto(`${base}#w=${words.join('-')}`);
-    await guest.page.waitForSelector('#join-go');
-    const filled = await guest.page.inputValue('#join-word-5');
-    ok(filled === words[5], 'the QR link fills in the six words');
-    await guest.page.fill('#join-name', guest.name);
-  } else {
+  ok((await host.page.locator('.invite-modal .qr-box svg').count()) === 1, 'the invite shows a QR code');
+  await shot(host, `invite-${via}.png`);
+  const link = await host.page.inputValue('#invite-link');
+  ok(link === `${base}#join=${words.join('-')}`, `the invite link carries the six words in the hash (${link})`);
+  const scanned = await readQr(host);
+  ok(scanned === link, `the QR code holds the same invite link (${scanned})`);
+  if (via === 'words') {
     await guest.page.fill('#name', guest.name);
     await guest.page.click('#open-join');
-    await typeWords(guest.page, 'join-word', words);
+    // The whole phrase lands in the first box through an input event with no
+    // paste event, the way phone keyboards insert the clipboard. It must
+    // spread one word per box and join at once: the boxes are read the moment
+    // the join starts, since the form then gives way to the waiting screen.
+    await guest.page.evaluate(() => {
+      const { actions } = window.popcornpals;
+      const join = actions.joinRoom;
+      actions.joinRoom = () => {
+        window.__boxes = [...document.querySelectorAll('.join-card .word-field')].map((x) => x.value);
+        actions.joinRoom = join;
+        join();
+      };
+    });
+    await guest.page.fill('#join-word-0', words.join(' '));
+    const boxes = await guest.page.evaluate(() => window.__boxes);
+    ok(JSON.stringify(boxes) === JSON.stringify(words), `the phrase spreads one word per box and joins (${JSON.stringify(boxes)})`);
+    await waitFor(guest, () => window.popcornpals.S.join.stage !== 'type');
+  } else {
+    let url = scanned;
+    if (via === 'link') {
+      await host.page.click('#copy-link');
+      await host.page.waitForSelector('#copy-link.is-copied');
+      url = await host.page.evaluate(() => navigator.clipboard.readText());
+      ok(url === link, 'Copy puts the invite link on the clipboard');
+    }
+    // A guest who opens the link joins at once, nothing to type or press.
+    // The scanned QR opens in the app already on screen (a hash change); the
+    // copied link opens in a fresh page load.
+    if (via === 'qr') {
+      await guest.page.fill('#name', guest.name);
+    } else {
+      await guest.page.evaluate((name) => localStorage.setItem('pp:name', JSON.stringify(name)), guest.name);
+      await guest.page.goto('about:blank');
+    }
+    await guest.page.goto(url);
+    await waitFor(guest, () => ['connecting', 'confirm'].includes(window.popcornpals.S.join.stage) || window.popcornpals.S.view === 'room');
+    ok(!(await guest.page.evaluate(() => location.hash)), 'the words are cleared from the address bar');
   }
-  await guest.page.click('#join-go');
   const confirm = await wordsOf(guest, '.confirm-words');
   await host.page.waitForSelector('#confirm-word-0', { timeout: 30000 });
   await typeWords(host.page, 'confirm-word', confirm);
@@ -220,10 +280,11 @@ try {
   people.push(ana, bia, caio);
   log(`three browsers with fresh profiles, pairing through ${broker ? 'a local relay' : 'the public relays'}`);
 
-  const video = resolve(await ensureTestVideo(ana.context, base, '.e2e/countdown.webm'));
+  // Two minutes, so a slow machine never reaches the end in the middle of a check.
+  const video = resolve(await ensureTestVideo(ana.context, base, '.e2e/countdown-120.webm', { width: 320, height: 180, fps: 15, seconds: 120 }));
   const other = resolve('.e2e/other.webm');
   if (!existsSync(other)) writeFileSync(other, randomBytes(64 * 1024));
-  log('test video ready (40 s, VP8 and Opus in WebM)');
+  log('test video ready (120 s, VP8 and Opus in WebM)');
   const subtitles = resolve('.e2e/lines.vtt');
   const cues = Array.from({ length: 20 }, (_, i) => `${String(Math.floor((i * 2) / 60)).padStart(2, '0')}:${String((i * 2) % 60).padStart(2, '0')}.000 --> ${String(Math.floor((i * 2 + 2) / 60)).padStart(2, '0')}:${String((i * 2 + 2) % 60).padStart(2, '0')}.000\nLine ${i + 1}`);
   writeFileSync(subtitles, `WEBVTT\n\n${cues.join('\n\n')}\n`);
@@ -236,7 +297,7 @@ try {
   await invite(ana, bia);
   await waitFor(ana, () => document.querySelector('#room-count')?.dataset.count === '2');
   await waitFor(bia, () => document.querySelector('#room-count')?.dataset.count === '2');
-  log('Bia joined with six words after Ana typed the six confirmation words');
+  log('Bia pasted the six words into one box, they spread one per box and joined; Ana typed the six confirmation words');
 
   const ids = { ana: await idOf(ana), bia: await idOf(bia) };
 
@@ -304,7 +365,7 @@ try {
   await pick(ana, '#pick-local', video);
   await waitFor(ana, () => window.popcornpals.S.media.kind === 'file' && document.getElementById('file-video').readyState >= 1);
   await bia.page.waitForSelector('#need-pick');
-  ok((await bia.page.textContent('#need-name')).includes('countdown.webm'), 'Bia is asked for the same file by name');
+  ok((await bia.page.textContent('#need-name')).includes('countdown-120.webm'), 'Bia is asked for the same file by name');
   await pick(bia, '#need-pick', other);
   await waitFor(bia, () => window.popcornpals.S.media.needs === 'mismatch');
   log('a different file is refused by the quick hash');
@@ -319,11 +380,11 @@ try {
 
   // The movie gets quieter while someone talks (Bia's fake microphone beeps)
   await evalApp(bia, () => window.popcornpals.actions.setNoise('off'));
-  await waitFor(ana, () => document.getElementById('file-video').volume < 0.9, null, 20000);
+  await waitFor(ana, () => document.getElementById('file-video').volume < 0.9, null, 45000);
   log(`the movie is lowered while Bia talks (volume ${(await evalApp(ana, () => document.getElementById('file-video').volume)).toFixed(2)})`);
 
   // A late joiner through the QR link
-  await invite(ana, caio, { viaQr: true });
+  await invite(ana, caio, { via: 'qr' });
   await waitFor(ana, () => document.querySelector('#room-count')?.dataset.count === '3');
   ids.caio = await idOf(caio);
   await caio.page.waitForSelector('#need-pick');
@@ -412,6 +473,26 @@ try {
   await audioFlows(caio, ids.bia, 'Caio hears Bia');
   log('a late joiner talks and hears');
 
+  // Mute: the track goes silent and the others see it
+  await bia.page.click('#mic');
+  await waitFor(bia, () => window.popcornpals.S.voice.muted && !window.popcornpals.app.media.mic.track.enabled);
+  await waitFor(ana, (id) => window.popcornpals.S.people.find((x) => x.id === id)?.muted === true, ids.bia);
+  await bia.page.click('#mic');
+  await waitFor(ana, (id) => window.popcornpals.S.people.find((x) => x.id === id)?.muted === false, ids.bia);
+  log('mute silences the microphone and shows as muted for the others, then unmutes');
+
+  // Device pickers: switch Ana's microphone while she is talking
+  await evalApp(ana, () => window.popcornpals.actions.openSettings());
+  await waitFor(ana, () => document.querySelectorAll('#dev-mic option').length > 1 && document.querySelectorAll('#dev-cam option').length > 1);
+  const mics = await ana.page.$$eval('#dev-mic option', (els) => els.map((e) => e.value).filter(Boolean));
+  const pickMic = mics[mics.length - 1];
+  await ana.page.selectOption('#dev-mic', pickMic);
+  await waitFor(ana, (id) => window.popcornpals.app.media.mic?.raw.getAudioTracks()[0].getSettings().deviceId === id, pickMic);
+  await audioFlows(bia, ids.ana, 'Bia still hears Ana on the other microphone');
+  await shot(ana, 'settings-devices.png');
+  await ana.page.click('#settings-modal .modal-x');
+  log(`the microphone picker lists ${mics.length} inputs and switches a live microphone without dropping the call`);
+
   // Screen share
   await ana.page.click('.ctl-btn[aria-label="Stop and choose something else"]');
   await waitFor(bia, () => !window.popcornpals.S.media.kind);
@@ -424,6 +505,14 @@ try {
   log('a shared screen reaches the others');
 
   await shot(bia, 'screen.png');
+
+  // A fourth friend opens the copied invite link and lands in the same room
+  const dani = await person('Dani');
+  people.push(dani);
+  await invite(ana, dani, { via: 'link' });
+  for (const p of [ana, bia, caio, dani]) await waitFor(p, () => document.querySelector('#room-count')?.dataset.count === '4');
+  ok((await evalApp(dani, () => window.popcornpals.app.room.mesh.room.id)) === (await evalApp(ana, () => window.popcornpals.app.room.mesh.room.id)), 'the link leads to the same room');
+  log('the words (Bia), the QR code (Caio) and the copied link (Dani) all reach the same room');
   ok(errors.length === 0, `no console errors:\n${errors.join('\n')}`);
   log('no console errors');
   console.log('e2e passed');

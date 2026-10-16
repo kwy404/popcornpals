@@ -16,6 +16,9 @@ export class Media extends Emitter {
     this.camera = null; // { stream, track }
     this.noiseMode = 'strong';
     this.muted = false;
+    this.micId = ''; // chosen devices; '' is the system default
+    this.camId = '';
+    this.outId = '';
     this.screen = null; // { stream, video, audio }
     this.movie = null; // { stream } a local file this device streams to everyone
     this.remote = new Map(); // peerId -> { audio: HTMLAudioElement, stream, level }
@@ -114,7 +117,7 @@ export class Media extends Emitter {
   async startMic() {
     if (this.mic) return;
     const supported = navigator.mediaDevices.getSupportedConstraints?.() || {};
-    const raw = await navigator.mediaDevices.getUserMedia({ audio: micConstraints({ noiseMode: this.noiseMode, supported }), video: false });
+    const raw = await withFallback(this.micId, (inputId) => navigator.mediaDevices.getUserMedia({ audio: micConstraints({ noiseMode: this.noiseMode, supported, inputId }), video: false }));
     for (const t of raw.getAudioTracks()) if ('contentHint' in t) t.contentHint = 'speech';
     const pipe = await this._denoise(raw);
     const track = pipe.stream.getAudioTracks()[0];
@@ -161,6 +164,14 @@ export class Media extends Emitter {
     await this.startMic();
   }
 
+  /** Use another microphone; an open microphone moves to it and stays muted or not. */
+  async setMicDevice(id) {
+    this.micId = id || '';
+    if (!this.mic) return;
+    this._closeMic(false);
+    await this.startMic();
+  }
+
   _closeMic(tellLinks) {
     const m = this.mic;
     if (!m) return;
@@ -199,13 +210,40 @@ export class Media extends Emitter {
   /** A small camera picture, sent to everyone and shown as a seat under the screen. */
   async startCamera() {
     if (this.camera) return this.camera.stream;
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 320 }, height: { ideal: 240 }, frameRate: { ideal: 15 } }, audio: false });
+    const video = (deviceId) => ({ width: { ideal: 320 }, height: { ideal: 240 }, frameRate: { ideal: 15 }, ...(deviceId ? { deviceId: { exact: deviceId } } : {}) });
+    const stream = await withFallback(this.camId, (id) => navigator.mediaDevices.getUserMedia({ video: video(id), audio: false }));
     const track = stream.getVideoTracks()[0];
     this.camera = { stream, track };
     for (const link of this.links.values()) link.setTrack('camera', track, stream);
     track.addEventListener('ended', () => this.stopCamera());
     this.emit('change');
     return stream;
+  }
+
+  /** Use another camera; a camera that is on switches over at once. */
+  async setCameraDevice(id) {
+    this.camId = id || '';
+    if (!this.camera) return;
+    this.stopCamera();
+    await this.startCamera();
+  }
+
+  /** Play every voice, and the given stage elements, on this output device. */
+  async setOutput(id, extra = []) {
+    this.outId = id || '';
+    const els = [...[...this.remote.values()].map((r) => r.audio), ...this.screenAudio.values(), ...extra];
+    await Promise.all(els.map((el) => sinkTo(el, this.outId)));
+  }
+
+  /** The media devices, by kind. Labels are empty until a permission was granted. */
+  static async devices() {
+    const out = { audioinput: [], audiooutput: [], videoinput: [] };
+    try {
+      for (const d of await navigator.mediaDevices.enumerateDevices()) if (out[d.kind]) out[d.kind].push(d);
+    } catch {
+      // no media devices API here
+    }
+    return out;
   }
 
   stopCamera() {
@@ -231,6 +269,7 @@ export class Media extends Emitter {
         el = document.createElement('audio');
         el.autoplay = true;
         this.sink.append(el);
+        sinkTo(el, this.outId);
         this.screenAudio.set(peerId, el);
       }
       el.srcObject = stream;
@@ -243,6 +282,7 @@ export class Media extends Emitter {
       audio.autoplay = true;
       audio.dataset.peer = peerId;
       this.sink.append(audio);
+      sinkTo(audio, this.outId);
       r = { audio, stream: null };
       this.remote.set(peerId, r);
     }
@@ -318,5 +358,22 @@ export class Media extends Emitter {
     this.stopMovie();
     for (const id of [...this.remote.keys(), ...this.screenAudio.keys()]) this.detach(id);
     this.links.clear();
+  }
+}
+
+/** Route an element's sound to an output device, where the browser allows it. */
+function sinkTo(el, id) {
+  if (!el?.setSinkId || (el.sinkId || '') === (id || '')) return Promise.resolve();
+  return el.setSinkId(id || '').catch(() => {});
+}
+
+/** Open a device by id, and fall back to the default one if it is gone. */
+async function withFallback(id, open) {
+  if (!id) return open('');
+  try {
+    return await open(id);
+  } catch (err) {
+    if (err?.name !== 'OverconstrainedError' && err?.name !== 'NotFoundError') throw err;
+    return open('');
   }
 }

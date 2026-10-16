@@ -101,7 +101,9 @@ describe('pairing link', () => {
     const { encodeQR: encodeQr } = await import('../src/qr.js');
     const words = ['abandon', 'ability', 'able', 'about', 'above', 'absent'];
     const link = wordsLink('https://kwy404.github.io/popcornpals/app/#old', words);
-    expect(link).toBe('https://kwy404.github.io/popcornpals/app/#w=abandon-ability-able-about-above-absent');
+    expect(link).toBe('https://kwy404.github.io/popcornpals/app/#join=abandon-ability-able-about-above-absent');
+    expect(wordsFromLink('#join=abandon-ability-able-about-above-absent')).toEqual(words);
+    expect(wordsFromLink('#join=')).toBeNull();
     expect(wordsFromLink(link)).toEqual(words);
     expect(wordsFromLink('nothing here')).toBeNull();
     // The longest possible words still fit a small, easy to scan code.

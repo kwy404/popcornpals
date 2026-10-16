@@ -78,6 +78,7 @@
     <div class="join-wait" v-if="S.join.stage === 'connecting'" role="status">
       <span class="spinner spinner-ring spinner-lg" aria-hidden="true"></span>
       <h1 class="display display-sm">{ t('join.connecting') }</h1>
+      <p class="muted" v-if="S.join.invited">{ t('join.fromLink') }</p>
       <p class="lede">{ S.join.relays }</p>
     </div>
     <div class="join-confirm" v-if="S.join.stage === 'confirm'">
@@ -269,7 +270,7 @@
             <div class="chat-head"><span class="dot" :style="{ background: m.color }" aria-hidden="true"></span><strong>{ m.name }</strong>
               <button type="button" class="vt-chip" v-if="m.vt !== null" @click="S.seekToTime(m.vt)" :title="t('chat.timeTitle', { t: m.vtLabel })" :aria-label="t('chat.timeTitle', { t: m.vtLabel })"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-clock"/></svg>{ m.vtLabel }</button>
               <time class="muted">{ m.time }</time>
-              <button type="button" class="icon-btn icon-btn-sm reply-btn" @click="S.replyTo(m.id)" :aria-label="t('chat.reply')" :title="t('chat.reply')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-reply"/></svg></button>
+              <button type="button" class="icon-btn icon-btn-sm reply-btn" @click="S.startReply(m.id)" :aria-label="t('chat.reply')" :title="t('chat.reply')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-reply"/></svg></button>
             </div>
             <blockquote class="chat-quote" v-if="m.reply"><strong>{ m.reply.name }</strong> { m.reply.text }</blockquote>
             <p class="chat-text"><span v-for="p in m.parts" :key="p.i">{ p.text || '' }<button type="button" class="time-link" v-if="p.time !== undefined" @click="S.seekToTime(p.time)" :title="t('chat.timeTitle', { t: p.label })">{ p.label }</button></span></p>
@@ -332,7 +333,7 @@
   </main>
 </div>
 
-<!-- Invite: six words and a QR code -->
+<!-- Invite: six words, a QR code and a link, all carrying the same words -->
 <dialog class="modal invite-modal" id="invite-modal" :open="S.invite.open" @close="S.closeInvite()" @keydown.esc="S.closeInvite()" aria-labelledby="invite-h">
   <div class="modal-backdrop" @click="S.closeInvite()"></div>
   <div class="modal-box">
@@ -345,10 +346,24 @@
       <p class="eyebrow">{ t('invite.eyebrow') }</p>
       <h2 id="invite-h" class="modal-title-xl">{ t('invite.title') }</h2>
       <div class="ticket">
-        <ol class="ticket-words invite-words" :data-words="S.invite.words.join(' ')">
-          <li v-for="(w, i) in S.invite.words" :key="i"><span class="tw-n">{ i + 1 }</span><span class="tw-w">{ w }</span></li>
-        </ol>
-        <div class="ticket-qr" v-html="S.invite.qr" role="img" :aria-label="t('invite.qrAlt')"></div>
+        <div class="ticket-side">
+          <p class="ticket-h"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-words"/></svg>{ t('invite.wordsH') }</p>
+          <ol class="ticket-words invite-words" :data-words="S.invite.words.join(' ')">
+            <li v-for="(w, i) in S.invite.words" :key="i"><span class="tw-n">{ i + 1 }</span><span class="tw-w">{ w }</span></li>
+          </ol>
+        </div>
+        <div class="ticket-qr">
+          <p class="ticket-h"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-qr"/></svg>{ t('invite.qrH') }</p>
+          <div class="qr-box" v-html="S.invite.qr" role="img" :aria-label="t('invite.qrAlt')"></div>
+        </div>
+      </div>
+      <div class="invite-link">
+        <label class="ticket-h" for="invite-link"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-link"/></svg>{ t('invite.linkH') }</label>
+        <div class="link-row">
+          <input id="invite-link" class="input input-sm" type="text" readonly :value="S.invite.link" :aria-label="t('invite.linkLabel')" spellcheck="false" @focus="$event.target.select()">
+          <button type="button" class="btn btn-sm btn-primary" id="copy-link" @click="S.copyInviteLink()" :class="{ 'is-copied': S.invite.copied }"><svg class="ic" aria-hidden="true" v-show="!S.invite.copied"><use href="icons.svg#i-copy"/></svg><svg class="ic" aria-hidden="true" v-show="S.invite.copied"><use href="icons.svg#i-check"/></svg><span>{ S.invite.copied ? t('invite.copied') : t('invite.copy') }</span></button>
+        </div>
+        <p class="muted small link-note">{ t('invite.linkNote') }</p>
       </div>
       <p class="muted small">{ t('invite.how') }</p>
       <p class="invite-status" role="status"><span class="live-dot" aria-hidden="true"></span>{ t('invite.waiting') } <span class="muted">{ S.invite.relays }</span></p>
@@ -472,6 +487,29 @@
       </div>
     </div>
     <h3 class="set-h">{ t('settings.voice') }</h3>
+    <div class="set-row set-device">
+      <label for="dev-mic">{ t('settings.mic') }</label>
+      <select class="select select-sm" id="dev-mic" @change="S.setDevice('mic', $event.target.value)">
+        <option value="">{ t('settings.default') }</option>
+        <option v-for="d in S.devices.mic" :key="d.id" :value="d.id" :selected="d.id === S.devices.micId">{ d.label }</option>
+      </select>
+    </div>
+    <div class="set-row set-device">
+      <label for="dev-cam">{ t('settings.cam') }</label>
+      <select class="select select-sm" id="dev-cam" @change="S.setDevice('cam', $event.target.value)">
+        <option value="">{ t('settings.default') }</option>
+        <option v-for="d in S.devices.cam" :key="d.id" :value="d.id" :selected="d.id === S.devices.camId">{ d.label }</option>
+      </select>
+    </div>
+    <div class="set-row set-device">
+      <label for="dev-out">{ t('settings.speaker') }</label>
+      <select class="select select-sm" id="dev-out" @change="S.setDevice('out', $event.target.value)" :disabled="!S.devices.canOutput">
+        <option value="">{ t('settings.default') }</option>
+        <option v-for="d in S.devices.out" :key="d.id" :value="d.id" :selected="d.id === S.devices.outId">{ d.label }</option>
+      </select>
+    </div>
+    <p class="muted small" v-show="!S.devices.canOutput">{ t('settings.speakerNone') }</p>
+    <p class="muted small" v-show="S.devices.unnamed">{ t('settings.devicesHint') }</p>
     <div class="set-row">
       <span>{ t('settings.noise') }</span>
       <div class="segmented segmented-sm" role="group" :aria-label="t('settings.noise')" id="noise-mode">

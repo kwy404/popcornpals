@@ -137,7 +137,8 @@ const initial = {
   tab: 'chat',
   voice: { on: false, muted: false, error: '', camera: false, noise: NOISE_MODES.includes(store.get('noise')) ? store.get('noise') : 'strong', duck: store.get('duck', true) !== false, processing: '' },
   replyTo: null,
-  invite: { open: false, stage: 'making', words: [], qr: '', name: '', error: '', relays: '', typed: blankWords(), wrong: false },
+  invite: { open: false, stage: 'making', words: [], qr: '', link: '', copied: false, name: '', error: '', relays: '', typed: blankWords(), wrong: false },
+  devices: { mic: [], cam: [], out: [], micId: store.get('micId', ''), camId: store.get('camId', ''), outId: store.get('outId', ''), canOutput: typeof HTMLMediaElement !== 'undefined' && 'setSinkId' in HTMLMediaElement.prototype, unnamed: false },
   share: { open: false },
   settings: { open: false, stun: STUN_SERVERS.map((url) => ({ url, ok: null })), turnUrls: '', turnUser: '', turnPass: '', turnError: '', turnSaved: false, brokers: '' },
   add: { yt: '', queue: '', error: '', queueError: '' },
@@ -204,6 +205,29 @@ const actions = {
   // Invites
   openInvite: () => openInvite(),
   closeInvite: () => closeInvite(),
+  async copyInviteLink() {
+    const link = S.invite.link;
+    if (!link) return;
+    let done = false;
+    try {
+      await navigator.clipboard.writeText(link);
+      done = true;
+    } catch {
+      // No clipboard permission: fall back to selecting the field.
+      const field = $('invite-link');
+      field?.focus();
+      field?.select();
+      try {
+        done = document.execCommand('copy');
+      } catch {
+        done = false;
+      }
+    }
+    if (!done) return toast(t('invite.copyFail'), 'warn');
+    S.invite.copied = true;
+    clearTimeout(app.copiedTimer);
+    app.copiedTimer = setTimeout(() => (S.invite.copied = false), 2200);
+  },
   confirmInvite() {
     const res = resolvePhrase(S.invite.typed.map((w) => w || ''));
     if (!res.ok) {
@@ -341,7 +365,7 @@ const actions = {
       S.replyTo = null;
     }
   },
-  replyTo(id) {
+  startReply(id) {
     const m = app.room?.chat.find((x) => x.id === id);
     if (!m) return;
     S.replyTo = { id, name: nameOf(m.from), text: m.text.slice(0, 80) };
@@ -406,6 +430,24 @@ const actions = {
     const turn = store.get('turn', null);
     Object.assign(S.settings, { turnUrls: turn ? [].concat(turn.urls).join(' ') : '', turnUser: turn?.username || '', turnPass: turn?.credential || '', turnError: '', turnSaved: false, brokers: String(store.get('brokers', '') || '') });
     checkStun();
+    refreshDevices();
+  },
+  async setDevice(kind, id) {
+    const key = { mic: 'micId', cam: 'camId', out: 'outId' }[kind];
+    if (!key) return;
+    S.devices[key] = String(id || '');
+    store.set(key, S.devices[key]);
+    const m = app.media;
+    if (!m) return;
+    try {
+      if (kind === 'mic') await m.setMicDevice(S.devices.micId);
+      else if (kind === 'cam') await m.setCameraDevice(S.devices.camId);
+      else await m.setOutput(S.devices.outId, stageMedia());
+    } catch {
+      toast(t(kind === 'cam' ? 'camera.denied' : 'voice.denied'), 'warn');
+    }
+    renderVoice();
+    renderSeats();
   },
   saveTurn() {
     S.settings.turnSaved = false;
@@ -427,6 +469,24 @@ const actions = {
     toast(t('settings.saved'));
   },
 };
+
+/** The video elements on the stage, so their sound follows the chosen speakers. */
+function stageMedia() {
+  return [$('file-video'), $('screen-video')].filter(Boolean);
+}
+
+/** List the microphones, cameras and speakers for the pickers in the settings. */
+async function refreshDevices() {
+  const list = await Media.devices();
+  const named = (kind, prefix) =>
+    list[kind]
+      .filter((d) => d.deviceId && d.deviceId !== 'default' && d.deviceId !== 'communications')
+      .map((d, i) => ({ id: d.deviceId, label: d.label || `${prefix} ${i + 1}` }));
+  S.devices.mic.splice(0, S.devices.mic.length, ...named('audioinput', t('settings.mic')));
+  S.devices.cam.splice(0, S.devices.cam.length, ...named('videoinput', t('settings.cam')));
+  S.devices.out.splice(0, S.devices.out.length, ...named('audiooutput', t('settings.speaker')));
+  S.devices.unnamed = [...list.audioinput, ...list.videoinput].some((d) => !d.label);
+}
 
 async function checkStun() {
   S.settings.stun.splice(0, S.settings.stun.length, ...STUN_SERVERS.map((url) => ({ url, ok: null })));
@@ -529,7 +589,7 @@ async function openInvite() {
   if (!room) return;
   app.creator?.stop();
   if (app.invite && !app.invite.answered) room.mesh.cancelInvite(app.invite.inviteId);
-  Object.assign(S.invite, { open: true, stage: 'making', words: [], qr: '', name: '', error: '', relays: '', wrong: false });
+  Object.assign(S.invite, { open: true, stage: 'making', words: [], qr: '', link: '', copied: false, name: '', error: '', relays: '', wrong: false });
   S.invite.typed.splice(0, WORD_COUNT, ...blankWords());
   if (room.mesh.full) {
     S.invite.stage = 'full';
@@ -572,7 +632,9 @@ async function openInvite() {
     const words = await creator.start();
     if (app.creator !== creator) return;
     S.invite.words.splice(0, S.invite.words.length, ...words);
-    S.invite.qr = qrSvg(encodeQR(wordsLink(appUrl(), words), { ecl: 'M' }), { margin: 2, dark: '#0A0A0B', light: '#F4F1EC', title: t('invite.qrAlt') });
+    // The words, the QR code and the link all carry the same six words.
+    S.invite.link = wordsLink(appUrl(), words);
+    S.invite.qr = qrSvg(encodeQR(S.invite.link, { ecl: 'M' }), { margin: 2, dark: '#0A0A0B', light: '#F4F1EC', title: t('invite.qrAlt') });
     S.invite.stage = 'waiting';
   } catch (e) {
     S.invite.stage = 'error';
@@ -586,6 +648,11 @@ function enterRoom(room) {
   app.room = room;
   app.media = new Media($('audio-sink'));
   app.media.noiseMode = S.voice.noise;
+  app.media.micId = S.devices.micId;
+  app.media.camId = S.devices.camId;
+  app.media.outId = S.devices.canOutput ? S.devices.outId : '';
+  // The stage elements exist once the room view renders.
+  if (app.media.outId) setTimeout(() => app.media?.setOutput(app.media.outId, stageMedia()), 200);
   S.view = 'room';
   S.chat.splice(0, S.chat.length);
   S.unread = 0;
@@ -1326,8 +1393,10 @@ function boot() {
   const dl = $('bip39');
   dl.append(...WORDLIST.map((w) => Object.assign(document.createElement('option'), { value: w })));
   wireWordInputs(document, {
-    onComplete(prefix) {
-      if (prefix === 'join-word') $('join-go')?.focus();
+    onComplete(prefix, how) {
+      // A pasted phrase or link joins at once; typed words wait for the button.
+      if (prefix === 'join-word' && how === 'spread' && S.join.stage !== 'connecting') actions.joinRoom();
+      else if (prefix === 'join-word') $('join-go')?.focus();
       if (prefix === 'confirm-word') $('confirm-go')?.focus();
     },
   });
@@ -1351,19 +1420,19 @@ function boot() {
     }
   }, 700);
 
-  const words = wordsFromLink(location.hash);
-  if (words) {
-    const res = resolvePhrase(words);
-    actions.openJoin(res.words.map((w) => w || ''));
-    history.replaceState(null, '', appUrl());
-  }
-  addEventListener('hashchange', () => {
+  // An invite link (#join=word-word-...) joins the room right away. The words
+  // never leave the hash, and the hash is cleared from the address bar at once.
+  const joinFromLink = () => {
     const w = wordsFromLink(location.hash);
-    if (w && S.view !== 'room') {
-      actions.openJoin(resolvePhrase(w).words.map((x) => x || ''));
-      history.replaceState(null, '', appUrl());
-    }
-  });
+    if (!w) return;
+    history.replaceState(null, '', appUrl());
+    if (S.view === 'room' || app.joiner) return;
+    actions.openJoin(resolvePhrase(w).words.map((x) => x || ''));
+    actions.joinRoom();
+  };
+  joinFromLink();
+  addEventListener('hashchange', joinFromLink);
+  navigator.mediaDevices?.addEventListener?.('devicechange', () => S.settings.open && refreshDevices());
   addEventListener('beforeunload', () => app.room?.leave());
   addEventListener('pointerdown', () => app.media?.resume(), { once: true });
 

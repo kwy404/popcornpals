@@ -32,12 +32,17 @@ describe('app strings', () => {
     expect(pickLang('en', ['pt-BR'])).toBe('en');
   });
 
-  it('never shows an invite link: only the six words and the QR code', () => {
+  it('shows three ways in: the six words, the QR code and the invite link with a Copy button', () => {
     const start = html.indexOf(`v-if="S.invite.stage === 'waiting'"`);
     const invite = html.slice(start, html.indexOf(`v-if="S.invite.stage === 'connecting'"`, start));
     expect(invite).toContain('invite-words');
-    expect(invite).toContain('ticket-qr');
-    expect(invite).not.toMatch(/<input|href=|copy/i);
+    expect(invite).toContain('qr-box');
+    expect(invite).toMatch(/<input id="invite-link"[^>]*readonly[^>]*:value="S.invite.link"/);
+    expect(invite).toContain('id="copy-link"');
+  });
+
+  it('offers microphone, camera and speaker pickers in the settings', () => {
+    for (const id of ['dev-mic', 'dev-cam', 'dev-out']) expect(html).toContain(`<select class="select select-sm" id="${id}"`);
   });
 
   it('loads Monsoon 0.2.0 and Voodoo.js 1.0.0 and uses only relative paths', () => {

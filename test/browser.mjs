@@ -38,7 +38,7 @@ export async function launchPerson(chromium, { executablePath, viewport = { widt
     headless: true,
     viewport,
     locale,
-    permissions: ['microphone', 'camera'],
+    permissions: ['microphone', 'camera', 'clipboard-read', 'clipboard-write'],
     args: [...FAKE_MEDIA, ...extraArgs],
   });
 }
