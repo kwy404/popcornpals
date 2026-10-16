@@ -87,10 +87,10 @@ export async function makeTestVideo(context, url, opts = VIDEO) {
   return muxWebm({ width: opts.width, height: opts.height, frames, audio, durationMs: opts.seconds * 1000 });
 }
 
-export async function ensureTestVideo(context, url, file) {
+export async function ensureTestVideo(context, url, file, opts = VIDEO) {
   if (existsSync(file)) return file;
   mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, await makeTestVideo(context, url));
+  writeFileSync(file, await makeTestVideo(context, url, opts));
   return file;
 }
 

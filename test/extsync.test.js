@@ -124,6 +124,18 @@ describe('player sync in the page', () => {
     expect(video.currentTime).toBeCloseTo(4);
   });
 
+  it('rests at the end of the video instead of replaying it, and does not report the end as a pause', () => {
+    const { clock, video, sync } = setup();
+    video.duration = 30;
+    sync.onState(message('state', { playing: true, pos: 29, rate: 1, at: clock.t, seq: 1 }));
+    clock.t += 5000;
+    video.pause();
+    video.ended = true;
+    expect(video.flush(sync)).toEqual([]);
+    expect(sync.tick()).toBe('none');
+    expect(video.paused).toBe(true);
+  });
+
   it('follows the room speed', () => {
     const { clock, video, sync } = setup();
     sync.onState(message('state', { playing: true, pos: 0, rate: 1, at: clock.t, seq: 1 }));

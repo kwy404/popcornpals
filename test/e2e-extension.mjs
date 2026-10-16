@@ -76,11 +76,15 @@ async function person(name) {
   watch(app, 'app');
   await app.goto(base);
   await app.waitForSelector('#start-room');
-  const player = await context.newPage();
-  watch(player, 'site');
-  await player.goto(`${site}/fixtures/player.html`);
-  await player.waitForFunction(() => document.getElementById('movie').readyState >= 1);
-  return { name, context, worker, app, player };
+  return { name, context, worker, app, player: null, watch };
+}
+
+/** The person's streaming site tab. */
+async function openSite(p) {
+  p.player = await p.context.newPage();
+  p.watch(p.player, 'site');
+  await p.player.goto(`${site}/fixtures/player.html`);
+  await p.player.waitForFunction(() => document.getElementById('movie').readyState >= 1, null, { timeout: 60000 });
 }
 
 async function waitFor(page, fn, arg, label, timeout = 60000) {
@@ -135,7 +139,9 @@ try {
   const ana = await person('Ana');
   const bia = await person('Bia');
   people.push(ana, bia);
-  await ensureTestVideo(ana.context, base, '.e2e/countdown.webm');
+  // A long video, so a slow machine never reaches the end in the middle of a check.
+  await ensureTestVideo(ana.context, base, '.e2e/long.webm', { width: 320, height: 180, fps: 5, seconds: 300 });
+  for (const p of [ana, bia]) await openSite(p);
   log('two browsers with the unpacked extension and a test streaming site');
 
   for (const p of [ana, bia]) await waitFor(p.app, () => window.popcornpals.S.ext.installed, null, `${p.name}: the app sees the extension`);
@@ -214,9 +220,9 @@ try {
   if (errors.length) console.error(`console errors:\n${errors.join('\n')}`);
   for (const p of people) {
     await p.app.screenshot({ path: resolve(`.e2e/failure-ext-${p.name}-app.png`) }).catch(() => {});
-    await p.player.screenshot({ path: resolve(`.e2e/failure-ext-${p.name}-site.png`) }).catch(() => {});
+    await p.player?.screenshot({ path: resolve(`.e2e/failure-ext-${p.name}-site.png`) }).catch(() => {});
   }
-  for (const p of people) console.error(p.name, await p.app.evaluate(() => window.__states).catch(() => null), await p.player.evaluate(() => window.__events.slice(-60)).catch(() => null));
+  for (const p of people) console.error(p.name, await p.app.evaluate(() => window.__states).catch(() => null), await p.player?.evaluate(() => window.__events.slice(-60)).catch(() => null));
   process.exitCode = 1;
 } finally {
   await Promise.all(people.map((p) => p.context.close().catch(() => {})));

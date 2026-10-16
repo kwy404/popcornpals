@@ -179,6 +179,8 @@ export class PlayerSync {
     const now = this.now();
     this._checkSeek(now);
     const expected = expectedPosition(s, now);
+    // The room is past the end of this video: let it rest at the end.
+    if (Number.isFinite(v.duration) && v.duration > 0 && expected >= v.duration - 0.3) return 'none';
     if (s.playing && v.paused) {
       if (this.seekable && Math.abs(v.currentTime - expected) > SYNC.PAUSED_TOL) this._seek(expected, now);
       this._mine('play');
@@ -250,7 +252,7 @@ export class PlayerSync {
     const action = map[kind];
     if (!action || this._wasMine(action, v.currentTime) || !this.state) return null;
     if (action === 'play' && this.state.playing) return null;
-    if (action === 'pause' && !this.state.playing) return null;
+    if (action === 'pause' && (!this.state.playing || v.ended)) return null;
     if (action === 'seek') {
       if (!this.seekable) return null;
       if (Math.abs(v.currentTime - expectedPosition(this.state, this.now())) < 1.5) return null;
