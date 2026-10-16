@@ -193,7 +193,8 @@ try {
 
   await ana.player.bringToFront();
   await ana.player.click('#site-jump');
-  await waitFor(bia.player, () => Math.abs(document.getElementById('movie').currentTime - 25) < 1, null, 'Bia follows Ana\'s seek on the site');
+  const target = await ana.player.evaluate(() => window.__jumpedTo);
+  await waitFor(bia.player, (to) => Math.abs(document.getElementById('movie').currentTime - to) < 1, target, 'Bia follows Ana\'s seek on the site');
   await closeTo(ana, bia, 'seek on Ana\'s site player', { paused: true, limit: 0.5 });
 
   await bia.player.click('#site-play');

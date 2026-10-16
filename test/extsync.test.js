@@ -181,6 +181,29 @@ describe('player sync in the page', () => {
     expect(sent.at(-1)).toMatchObject({ type: 'status', seekable: false });
   });
 
+  it('also sees the undo when the event of our own seek arrives before the jump back, as in a browser', () => {
+    const { clock, video, sync, sent } = setup();
+    sync.onState(message('state', { playing: false, pos: 0, rate: 1, at: clock.t, seq: 1 }));
+    video.flush(sync);
+    sync.onState(message('state', { playing: false, pos: 80, rate: 1, at: clock.t, seq: 2 }));
+    expect(video.flush(sync)).toEqual([]); // our own seek to 80
+    clock.t += 300;
+    video.currentTime = 0; // the page puts it back
+    expect(video.flush(sync)).toEqual([]);
+    expect(sync.seekable).toBe(false);
+    expect(sent.some((m) => m.type === 'event')).toBe(false);
+  });
+
+  it('still reports a person seeking far from where the video was', () => {
+    const { clock, video, sync } = setup();
+    sync.onState(message('state', { playing: false, pos: 10, rate: 1, at: clock.t, seq: 1 }));
+    video.flush(sync);
+    clock.t += 500;
+    video.currentTime = 60;
+    expect(video.flush(sync)).toMatchObject([{ type: 'event', action: 'seek', pos: 60 }]);
+    expect(sync.seekable).toBe(true);
+  });
+
   it('falls back to play and pause only when the player refuses outside seeks', () => {
     const { clock, video, sync, sent } = setup({ refuseSeek: true });
     sync.onState(message('state', { playing: true, pos: 120, rate: 1, at: clock.t, seq: 1 }));

@@ -536,6 +536,8 @@ function pickMainVideo(candidates) {
 
 /** How far (s) a seek may land from where it was asked before it counts as refused. */
 const SEEK_REFUSED = 2.5;
+/** How long (ms) after our own seek a jump back counts as the player undoing it. */
+const UNDO_WINDOW_MS = 4000;
 
 /**
  * Drives one page's video from the room. The video is anything with
@@ -639,6 +641,8 @@ class PlayerSync {
     if (Number.isFinite(end) && end > 0) to = Math.min(to, Math.max(0, end - 0.25));
     this._mine('seek', to);
     this.pendingSeek = { to, at: now };
+    // Where the video was, to recognize a player that undoes this seek.
+    this.lastSeek = { from: this.video.currentTime, to, at: now };
     try {
       this.video.currentTime = to;
     } catch {
@@ -679,6 +683,16 @@ class PlayerSync {
     if (action === 'pause' && (!this.state.playing || v.ended)) return null;
     if (action === 'seek') {
       if (!this.seekable) return null;
+      // A jump back to where the video was right before our own seek is the
+      // player undoing it, not a person seeking. In a browser the event of our
+      // seek comes first and is matched above, so this record outlives it.
+      const s = this.lastSeek;
+      if (s && this.now() - s.at < UNDO_WINDOW_MS && Math.abs(v.currentTime - s.from) < 1 && Math.abs(s.to - s.from) >= 1.5) {
+        this.lastSeek = null;
+        this.pendingSeek = null;
+        this._refuseSeek();
+        return null;
+      }
       if (Math.abs(v.currentTime - expectedPosition(this.state, this.now())) < 1.5) return null;
     }
     if (action === 'rate' && Math.abs(v.playbackRate - this.state.rate) < 0.01) return null;

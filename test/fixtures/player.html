@@ -22,7 +22,7 @@
     <div class="bar">
       <button type="button" id="site-play">Play</button>
       <button type="button" id="site-pause">Pause</button>
-      <button type="button" id="site-jump">Jump to 25 s</button>
+      <button type="button" id="site-jump">Jump 30 s ahead</button>
     </div>
   </div>
   <!-- A small preview video the extension must not pick -->
@@ -43,7 +43,9 @@
   let own = false;
   document.getElementById('site-jump').onclick = () => {
     own = true;
-    v.currentTime = 25;
+    // Far from where the room is, so it is a real seek and not drift.
+    v.currentTime = Math.round(v.currentTime) + 30;
+    window.__jumpedTo = v.currentTime;
   };
   // ?noseek=1 imitates a player that undoes any seek it did not start itself.
   if (new URLSearchParams(location.search).has('noseek')) {
