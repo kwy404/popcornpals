@@ -33,6 +33,8 @@ export const SYNC = Object.freeze({
   MAX_PAUSE_REWIND_MS: 2000,
   /** The longest queue. */
   MAX_QUEUE: 50,
+  /** A press this soon (ms) after someone else flipped play or pause was aimed at the screen before the flip. */
+  REACTION_MS: 500,
 });
 
 export const MIN_RATE = 0.25;
@@ -173,16 +175,25 @@ export function cleanSource(src) {
   const duration = Number.isFinite(src.duration) && src.duration > 0 ? src.duration : null;
   if (src.kind === 'yt' && /^[A-Za-z0-9_-]{11}$/.test(src.id || '')) return { kind: 'yt', id: src.id, title, duration };
   if (src.kind === 'file' && /^[0-9a-f]{32}$/.test(src.hash || '') && Number.isFinite(src.size) && src.size > 0) {
-    return { kind: 'file', hash: src.hash, size: src.size, name: String(src.name || 'video').slice(0, 200), title: title || String(src.name || 'video').slice(0, 200), duration };
+    // 'stream': one person (id) has the file and streams it to everyone.
+    // 'local': everyone opens the same file on their own device; only sync messages travel.
+    const mode = src.mode === 'local' ? 'local' : 'stream';
+    if (mode === 'stream' && !(typeof src.id === 'string' && src.id.length > 0 && src.id.length <= 64)) return null;
+    const name = String(src.name || 'video').slice(0, 200);
+    const out = { kind: 'file', mode, hash: src.hash, size: src.size, name, title: title || name, duration };
+    if (mode === 'stream') out.id = src.id;
+    return out;
   }
   if (src.kind === 'screen' && typeof src.id === 'string' && src.id.length <= 64) return { kind: 'screen', id: src.id, title, duration: null };
+  // Everyone plays the video on a streaming site with their own account, through the extension.
+  if (src.kind === 'ext' && typeof src.id === 'string' && /^[A-Za-z0-9_-]{1,32}$/.test(src.id)) return { kind: 'ext', id: src.id, title, duration };
   return null;
 }
 
 /** Clean a queue item: a source plus who added it. */
 export function cleanItem(item, by) {
   const src = cleanSource(item?.src);
-  if (!src || src.kind === 'screen') return null;
+  if (!src || src.kind === 'screen' || src.kind === 'ext') return null;
   const id = typeof item.id === 'string' && /^[A-Za-z0-9_-]{1,32}$/.test(item.id) ? item.id : null;
   if (!id) return null;
   return { id, src, by: String(by || item.by || '').slice(0, 64) };
@@ -329,6 +340,20 @@ export function applyIntent(state, intent, { now, host = state.host, opts = SYNC
   return { state: next, result: 'applied' };
 }
 
+/**
+ * What a press on the play/pause button means. Normally it toggles the state
+ * on screen. But people cannot react within half a second: when someone else
+ * flipped play or pause just before the press, the person was pressing at
+ * what they saw before the flip. The intent then carries that older state's
+ * sequence number, so the host treats the two presses as simultaneous (a
+ * duplicate when both wanted the same thing) instead of flipping back.
+ *   flip: { at, playing, seq } the state shown before the last flip by someone else
+ */
+export function pressIntent(state, flip, now, opts = SYNC) {
+  if (flip && now - flip.at < opts.REACTION_MS) return { action: flip.playing ? 'pause' : 'play', base: flip.seq };
+  return { action: state.playing ? 'pause' : 'play', base: state.seq };
+}
+
 function clampPos(p, state) {
   const end = state.src?.duration;
   return Number.isFinite(end) && end > 0 ? clamp(p, 0, end) : Math.max(0, p);
@@ -349,7 +374,8 @@ export function takeOver(state, { host, now, oldHostNow }) {
  * What a member who just joined (or who just got a newer state) should show.
  * Returns { state, position, playing, needs } where state is the newest of
  * the two and needs says what this member must do before it can follow:
- * 'nothing', 'youtube' (load the player), 'file' (pick the same file) or
+ * 'nothing', 'youtube' (load the player), 'file' (pick the same file, in
+ * the best quality mode), 'stream' (receive the file someone streams) or
  * 'screen' (wait for the shared screen).
  */
 export function joinView(local, incoming, hostNow, { fileHash = null } = {}) {
@@ -357,8 +383,10 @@ export function joinView(local, incoming, hostNow, { fileHash = null } = {}) {
   const src = state?.src;
   let needs = 'nothing';
   if (src?.kind === 'yt') needs = 'youtube';
-  else if (src?.kind === 'file') needs = fileHash === src.hash ? 'nothing' : 'file';
+  else if (src?.kind === 'file' && src.mode === 'local') needs = fileHash === src.hash ? 'nothing' : 'file';
+  else if (src?.kind === 'file') needs = 'stream';
   else if (src?.kind === 'screen') needs = 'screen';
+  else if (src?.kind === 'ext') needs = 'extension';
   return { state, position: positionAt(state, hostNow), playing: !!state?.playing, needs };
 }
 

@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<script>(function(){try{var t=localStorage.getItem('voodoo:theme');if(t&&t.charAt(0)==='"')t=JSON.parse(t);var r=document.documentElement;t=t==='light'?'light':'dark';r.setAttribute('data-theme',t);r.style.colorScheme=t}catch(e){}})();</script>
+<title>popcornpals: watch together, in sync</title>
+<meta name="description" content="Start a room, invite up to 4 friends with six words, and watch YouTube videos, your own video files or a shared screen in sync, with voice and chat. Peer to peer, no account.">
+<meta name="theme-color" content="#0A0A0B">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/monsooncss@0.2.0/dist/monsoon.min.css">
+<link rel="stylesheet" href="app.css">
+<script src="https://cdn.jsdelivr.net/npm/voodoojs@1.0.0/dist/voodoo.full.min.js" data-manual defer></script>
+<script type="module" src="js/main.js"></script>
+</head>
+<body class="app" :class="{ 'in-room': S.view === 'room' }" v-cloak>
+<a class="skip-link" href="#main">{ t('skip') }</a>
+<div class="grain" aria-hidden="true"></div>
+
+<!-- Lobby: start or join -->
+<main id="main" class="lobby" v-if="S.view !== 'room'">
+  <div class="beam" aria-hidden="true"></div>
+  <header class="lobby-top">
+    <a class="brand" href="../" :aria-label="t('brand.home')"><img src="favicon.svg" alt="" width="28" height="28"><span>popcornpals</span></a>
+    <div class="top-tools">
+      <button type="button" class="icon-btn" @click="S.setLang(S.lang === 'en' ? 'pt' : 'en')" :aria-label="t('lang.switch')" :title="t('lang.switch')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-globe"/></svg><span class="lang-code">{ S.lang === 'en' ? 'PT' : 'EN' }</span></button>
+      <button type="button" class="icon-btn" v-theme-toggle :aria-label="t('theme.switch')" :title="t('theme.switch')"><svg class="ic ti-dark" aria-hidden="true"><use href="icons.svg#i-moon"/></svg><svg class="ic ti-light" aria-hidden="true"><use href="icons.svg#i-sun"/></svg></button>
+      <button type="button" class="icon-btn" @click="S.openSettings()" :aria-label="t('settings.title')" :title="t('settings.title')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-settings"/></svg></button>
+    </div>
+  </header>
+
+  <section class="lobby-card" v-if="S.view === 'lobby'" aria-labelledby="lobby-h">
+    <div class="lobby-art" aria-hidden="true">
+      <img class="art-dark" src="../assets/illustrations/screening-room-dark.svg" alt="" width="800" height="560">
+      <img class="art-light" src="../assets/illustrations/screening-room.svg" alt="" width="800" height="560">
+    </div>
+    <p class="eyebrow">{ t('lobby.eyebrow') }</p>
+    <h1 id="lobby-h" class="display">{ t('lobby.title') }</h1>
+    <p class="lede">{ t('lobby.lede') }</p>
+    <form class="lobby-form" @submit.prevent="S.startRoom()">
+      <label class="field-label" for="name">{ t('lobby.name') }</label>
+      <input id="name" class="input input-lg" v-model="S.name" maxlength="24" autocomplete="nickname" :placeholder="t('lobby.namePh')">
+      <div class="lobby-actions">
+        <button type="submit" class="btn btn-primary btn-lg" id="start-room" :disabled="S.busy"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-couch"/></svg>{ t('lobby.start') }</button>
+        <button type="button" class="btn btn-outline btn-lg" id="open-join" @click="S.openJoin()"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-words"/></svg>{ t('lobby.join') }</button>
+      </div>
+    </form>
+    <ul class="facts">
+      <li><svg class="ic" aria-hidden="true"><use href="icons.svg#i-users"/></svg>{ t('fact.people') }</li>
+      <li><svg class="ic" aria-hidden="true"><use href="icons.svg#i-shield"/></svg>{ t('fact.p2p') }</li>
+      <li><svg class="ic" aria-hidden="true"><use href="icons.svg#i-ticket"/></svg>{ t('fact.account') }</li>
+    </ul>
+  </section>
+
+  <section class="lobby-card join-card" v-if="S.view === 'join'" aria-labelledby="join-h">
+    <button type="button" class="btn btn-ghost btn-sm back" @click="S.cancelJoin()"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-close"/></svg>{ t('common.back') }</button>
+    <div v-if="S.join.stage === 'type' || S.join.stage === 'error' || S.join.stage === 'timeout'">
+      <p class="eyebrow">{ t('join.eyebrow') }</p>
+      <h1 id="join-h" class="display display-sm">{ S.join.invited ? t('join.invited') : t('join.title') }</h1>
+      <p class="lede">{ t('join.lede') }</p>
+      <form class="join-form" @submit.prevent="S.joinRoom()">
+        <div class="word-grid" data-prefix="join-word">
+          <div class="word-cell" v-for="(w, i) in S.join.words" :key="i">
+            <label class="word-n" :for="'join-word-' + i">{ i + 1 }</label>
+            <input class="input word-field" :id="'join-word-' + i" type="text" list="bip39" autocomplete="off" autocapitalize="none" spellcheck="false" v-model="S.join.words[i]" :aria-label="t('words.n', { n: i + 1 })">
+          </div>
+        </div>
+        <label class="field-label" for="join-name">{ t('lobby.name') }</label>
+        <input id="join-name" class="input" v-model="S.name" maxlength="24" autocomplete="nickname" :placeholder="t('lobby.namePh')">
+        <p class="form-error" role="alert" v-show="S.join.error">{ S.join.error }</p>
+        <button type="submit" class="btn btn-primary btn-lg btn-block" id="join-go">{ t('join.go') }</button>
+      </form>
+    </div>
+    <div class="join-wait" v-if="S.join.stage === 'connecting'" role="status">
+      <span class="spinner spinner-ring spinner-lg" aria-hidden="true"></span>
+      <h1 class="display display-sm">{ t('join.connecting') }</h1>
+      <p class="lede">{ S.join.relays }</p>
+    </div>
+    <div class="join-confirm" v-if="S.join.stage === 'confirm'">
+      <p class="eyebrow">{ t('join.confirmEyebrow') }</p>
+      <h1 class="display display-sm">{ t('join.confirmTitle', { name: S.join.hostName }) }</h1>
+      <ol class="ticket-words confirm-words" :data-words="S.join.confirm.join(' ')">
+        <li v-for="(w, i) in S.join.confirm" :key="i"><span class="tw-n">{ i + 1 }</span><span class="tw-w">{ w }</span></li>
+      </ol>
+      <p class="muted">{ t('join.confirmHint') }</p>
+    </div>
+    <div class="join-wait" v-if="S.join.stage === 'refused' || S.join.stage === 'full'" role="alert">
+      <svg class="ic ic-xl" aria-hidden="true"><use href="icons.svg#i-warning"/></svg>
+      <h1 class="display display-sm">{ S.join.stage === 'full' ? t('join.full') : t('join.refused') }</h1>
+      <button type="button" class="btn btn-outline" @click="S.cancelJoin()">{ t('common.back') }</button>
+    </div>
+  </section>
+</main>
+
+<!-- The room -->
+<div class="room" v-if="S.view === 'room'">
+  <header class="topbar">
+    <a class="brand" href="../" :aria-label="t('brand.home')"><img src="favicon.svg" alt="" width="26" height="26"><span class="brand-name">popcornpals</span></a>
+    <span class="room-pill" id="room-count" :data-count="S.room.count"><span class="live-dot" aria-hidden="true"></span>{ t('room.watching', { n: S.room.count, max: S.room.max }) }</span>
+    <span class="spacer"></span>
+    <button type="button" class="btn btn-primary invite-btn" id="invite" @click="S.openInvite()"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-invite"/></svg><span>{ t('invite.button') }</span></button>
+    <button type="button" class="icon-btn" id="mic" :class="{ 'is-on': S.voice.on && !S.voice.muted, 'is-muted': S.voice.on && S.voice.muted }" @click="S.toggleMic()" :aria-pressed="S.voice.on && !S.voice.muted ? 'true' : 'false'" :aria-label="S.voice.on ? (S.voice.muted ? t('voice.unmute') : t('voice.mute')) : t('voice.join')" :title="S.voice.on ? (S.voice.muted ? t('voice.unmute') : t('voice.mute')) : t('voice.join')">
+      <svg class="ic" aria-hidden="true" v-show="S.voice.on && !S.voice.muted"><use href="icons.svg#i-mic"/></svg>
+      <svg class="ic" aria-hidden="true" v-show="!S.voice.on || S.voice.muted"><use href="icons.svg#i-mic-off"/></svg>
+    </button>
+    <button type="button" class="icon-btn" id="camera" :class="{ 'is-on': S.voice.camera }" @click="S.toggleCamera()" :aria-pressed="S.voice.camera ? 'true' : 'false'" :aria-label="S.voice.camera ? t('camera.off') : t('camera.on')" :title="S.voice.camera ? t('camera.off') : t('camera.on')">
+      <svg class="ic" aria-hidden="true" v-show="S.voice.camera"><use href="icons.svg#i-camera"/></svg>
+      <svg class="ic" aria-hidden="true" v-show="!S.voice.camera"><use href="icons.svg#i-camera-off"/></svg>
+    </button>
+    <button type="button" class="icon-btn hide-sm" @click="S.setLang(S.lang === 'en' ? 'pt' : 'en')" :aria-label="t('lang.switch')" :title="t('lang.switch')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-globe"/></svg></button>
+    <button type="button" class="icon-btn hide-sm" v-theme-toggle :aria-label="t('theme.switch')" :title="t('theme.switch')"><svg class="ic ti-dark" aria-hidden="true"><use href="icons.svg#i-moon"/></svg><svg class="ic ti-light" aria-hidden="true"><use href="icons.svg#i-sun"/></svg></button>
+    <button type="button" class="icon-btn" @click="S.openSettings()" :aria-label="t('settings.title')" :title="t('settings.title')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-settings"/></svg></button>
+    <button type="button" class="icon-btn" id="leave" @click="S.leave()" :aria-label="t('room.leave')" :title="t('room.leave')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-leave"/></svg></button>
+  </header>
+
+  <main class="room-main" id="main">
+    <section class="theater" :aria-label="t('stage.label')">
+      <div class="screen-frame" :class="{ 'has-media': S.media.kind, 'is-screen': S.media.kind === 'screen' }">
+        <!-- Players live here; the app drives them directly -->
+        <div class="stage" id="stage" v-ignore>
+          <video id="file-video" playsinline preload="auto" hidden></video>
+          <div id="yt-mount" hidden></div>
+          <video id="screen-video" playsinline autoplay hidden></video>
+          <div class="bursts" id="bursts" aria-hidden="true"></div>
+        </div>
+
+        <!-- Nothing playing: pick what to watch -->
+        <div class="stage-overlay picker" v-if="!S.media.kind">
+          <p class="eyebrow">{ S.room.isHost ? t('pick.eyebrowHost') : t('pick.eyebrow', { name: S.room.hostName }) }</p>
+          <h2 class="stage-title">{ t('pick.title') }</h2>
+          <div class="pick-grid">
+            <form class="pick-card" @submit.prevent="S.addYouTube('play')">
+              <svg class="ic ic-lg" aria-hidden="true"><use href="icons.svg#i-film"/></svg>
+              <strong>{ t('pick.yt') }</strong>
+              <input class="input input-sm" id="yt-url" v-model="S.add.yt" :placeholder="t('pick.ytPh')" :aria-label="t('pick.ytPh')" autocomplete="off" spellcheck="false">
+              <button type="submit" class="btn btn-sm btn-primary" :disabled="!S.room.canControl">{ t('pick.play') }</button>
+            </form>
+            <div class="pick-card">
+              <svg class="ic ic-lg" aria-hidden="true"><use href="icons.svg#i-file"/></svg>
+              <strong>{ t('pick.file') }</strong>
+              <span class="muted small">{ t('pick.fileHint') }</span>
+              <button type="button" class="btn btn-sm btn-outline" id="pick-file" @click="S.pickFile('play')" :disabled="!S.room.canControl">{ t('pick.choose') }</button>
+              <button type="button" class="link-btn" id="pick-local" @click="S.pickFile('local')" :disabled="!S.room.canControl" :title="t('pick.localTitle')">{ t('pick.local') }</button>
+            </div>
+            <div class="pick-card">
+              <svg class="ic ic-lg" aria-hidden="true"><use href="icons.svg#i-screen"/></svg>
+              <strong>{ t('pick.screen') }</strong>
+              <span class="muted small">{ t('pick.screenHint') }</span>
+              <button type="button" class="btn btn-sm btn-outline" @click="S.share.open = true" :disabled="!S.room.canControl">{ t('pick.share') }</button>
+            </div>
+            <div class="pick-card">
+              <svg class="ic ic-lg" aria-hidden="true"><use href="icons.svg#i-globe"/></svg>
+              <strong>{ t('pick.ext') }</strong>
+              <span class="muted small">{ t('pick.extHint') }</span>
+              <button type="button" class="btn btn-sm btn-outline" id="pick-ext" @click="S.openExt()" :disabled="!S.room.canControl">{ t('pick.extGo') }</button>
+            </div>
+          </div>
+          <p class="form-error" role="alert" v-show="S.add.error">{ S.add.error }</p>
+          <p class="muted small" v-show="!S.room.canControl">{ t('lock.note') }</p>
+        </div>
+
+        <!-- A file is playing elsewhere and this device needs the same file -->
+        <div class="stage-overlay need" v-if="S.media.kind === 'file' && (S.media.needs === 'file' || S.media.needs === 'mismatch')">
+          <svg class="ic ic-xl" aria-hidden="true"><use href="icons.svg#i-file"/></svg>
+          <h2 class="stage-title">{ t('need.title') }</h2>
+          <p class="need-file"><strong id="need-name">{ S.media.fileName }</strong> <span class="muted">{ S.media.fileSize }</span></p>
+          <p class="form-error" role="alert" v-show="S.media.needs === 'mismatch'">{ t('need.mismatch') }</p>
+          <p class="muted small">{ t('need.hint') }</p>
+          <button type="button" class="btn btn-primary" id="need-pick" @click="S.pickFile('match')">{ t('need.pick') }</button>
+        </div>
+
+        <div class="stage-overlay need" v-if="S.media.needs === 'hashing'" role="status">
+          <span class="spinner spinner-ring" aria-hidden="true"></span>
+          <p>{ t('need.hashing') }</p>
+        </div>
+
+        <!-- A screen is shared but the stream has not arrived yet -->
+        <div class="stage-overlay need" v-if="S.media.kind === 'screen' && S.media.needs === 'screen'" role="status">
+          <span class="spinner spinner-ring" aria-hidden="true"></span>
+          <p>{ t('screen.waiting', { name: S.media.byName }) }</p>
+        </div>
+
+        <!-- Someone streams a file and it has not arrived yet -->
+        <div class="stage-overlay need" v-if="S.media.kind === 'file' && S.media.needs === 'stream'" role="status">
+          <span class="spinner spinner-ring" aria-hidden="true"></span>
+          <p>{ t('stream.waiting', { name: S.media.streamer }) }</p>
+        </div>
+
+        <!-- Everyone plays on their own streaming site tab, through the extension -->
+        <div class="stage-overlay ext-stage" v-if="S.media.kind === 'ext'">
+          <svg class="ic ic-xl" aria-hidden="true"><use href="icons.svg#i-globe"/></svg>
+          <h2 class="stage-title">{ t('ext.stageTitle') }</h2>
+          <p class="ext-me" id="ext-me"><span class="dot" :class="S.ext.found ? 'ok' : 'bad'" aria-hidden="true"></span>{ S.ext.found ? t('ext.found', { site: S.ext.site }) : (S.ext.installed ? t('ext.noTab') : t('ext.notInstalled')) }</p>
+          <p class="muted small" v-show="S.ext.found && !S.ext.seekable">{ t('ext.noSeek') }</p>
+          <p class="muted small">{ t('ext.stageHint') }</p>
+          <button type="button" class="btn btn-sm btn-outline" @click="S.openExt()">{ t('ext.help') }</button>
+        </div>
+
+        <!-- Autoplay was blocked: one click to start -->
+        <button type="button" class="stage-overlay blocked" id="unblock" v-if="S.media.needs === 'blocked'" @click="S.unblock()">
+          <svg class="ic ic-xl" aria-hidden="true"><use href="icons.svg#i-play"/></svg>
+          <span>{ t('blocked') }</span>
+        </button>
+
+        <div class="captions" id="captions" v-show="S.media.caption && S.media.showSubs"><span>{ S.media.caption }</span></div>
+        <p class="stage-error" role="alert" v-show="S.media.error">{ S.media.error }</p>
+      </div>
+
+      <!-- Controls under the screen -->
+      <div class="controls" v-show="S.media.kind && S.media.kind !== 'screen'">
+        <button type="button" class="ctl-btn ctl-play" id="play" @click="S.togglePlay()" :disabled="!S.room.canControl" :aria-label="S.media.playing ? t('ctl.pause') : t('ctl.play')" :title="S.media.playing ? t('ctl.pause') : t('ctl.play')">
+          <svg class="ic" aria-hidden="true" v-show="!S.media.playing"><use href="icons.svg#i-play"/></svg>
+          <svg class="ic" aria-hidden="true" v-show="S.media.playing"><use href="icons.svg#i-pause"/></svg>
+        </button>
+        <button type="button" class="ctl-btn hide-xs" @click="S.seekBy(-10)" :disabled="!S.room.canControl" :aria-label="t('ctl.back10')" :title="t('ctl.back10')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-seek-back"/></svg></button>
+        <button type="button" class="ctl-btn hide-xs" @click="S.seekBy(10)" :disabled="!S.room.canControl" :aria-label="t('ctl.fwd10')" :title="t('ctl.fwd10')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-seek-forward"/></svg></button>
+        <span class="time" id="time-now">{ S.media.posText }</span>
+        <input type="range" class="range scrub" id="scrub" min="0" step="0.1" :max="S.media.duration || 0" .value="S.media.scrub" :disabled="!S.room.canControl || !S.media.duration" :aria-label="t('ctl.seek')" @pointerdown="S.media.dragging = true" @input="S.scrubbing($event.target.value)" @change="S.seekTo($event.target.value)">
+        <span class="time muted">{ S.media.durText }</span>
+        <select class="select select-sm rate" id="rate" :aria-label="t('ctl.rate')" :title="t('ctl.rate')" .value="String(S.media.rate)" @change="S.setRate($event.target.value)" :disabled="!S.room.canControl">
+          <option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1">1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option>
+        </select>
+        <span class="sync-chip" :class="'sync-' + S.media.syncLevel" :title="t('sync.title')" id="sync-chip"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-sync"/></svg><span class="hide-xs">{ S.media.syncText }</span></span>
+        <span class="sync-chip quality-chip" id="quality-chip" v-show="S.media.quality" :class="'q-' + S.media.qualityLevel" :title="t('quality.title')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-signal"/></svg><span class="hide-sm">{ S.media.quality }</span></span>
+        <button type="button" class="ctl-btn" id="subs" v-show="S.media.kind !== 'ext'" @click="S.subsButton()" :aria-pressed="S.media.subs && S.media.showSubs ? 'true' : 'false'" :aria-label="S.media.subs ? (S.media.showSubs ? t('subs.hide') : t('subs.show')) : t('subs.add')" :title="S.media.subs ? (S.media.showSubs ? t('subs.hide') : t('subs.show')) : t('subs.add')"><span class="cc" aria-hidden="true">CC</span></button>
+        <button type="button" class="ctl-btn" id="lock" v-if="S.room.isHost" @click="S.toggleLock()" :aria-pressed="S.room.lock ? 'true' : 'false'" :aria-label="S.room.lock ? t('lock.off') : t('lock.on')" :title="S.room.lock ? t('lock.off') : t('lock.on')">
+          <svg class="ic" aria-hidden="true" v-show="S.room.lock"><use href="icons.svg#i-lock"/></svg>
+          <svg class="ic" aria-hidden="true" v-show="!S.room.lock"><use href="icons.svg#i-unlock"/></svg>
+        </button>
+        <span class="lock-note" v-if="!S.room.isHost && S.room.lock" :title="t('lock.note')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-lock"/></svg></span>
+        <button type="button" class="ctl-btn" @click="S.next()" v-show="S.queue.length" :disabled="!S.room.canControl" :aria-label="t('queue.next')" :title="t('queue.next')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-next"/></svg></button>
+        <button type="button" class="ctl-btn" @click="S.unload()" :disabled="!S.room.canControl" :aria-label="t('ctl.stop')" :title="t('ctl.stop')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-close"/></svg></button>
+        <button type="button" class="ctl-btn hide-xs" @click="S.fullscreen()" :aria-label="t('ctl.full')" :title="t('ctl.full')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-fullscreen"/></svg></button>
+      </div>
+      <div class="controls" v-show="S.media.kind === 'screen'">
+        <span class="now-title"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-screen"/></svg>{ t('screen.live', { name: S.media.byName }) }</span>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-sm btn-outline" v-if="S.media.mine" @click="S.stopShare()">{ t('screen.stop') }</button>
+        <button type="button" class="ctl-btn" @click="S.fullscreen()" :aria-label="t('ctl.full')" :title="t('ctl.full')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-fullscreen"/></svg></button>
+      </div>
+      <p class="now-playing" v-show="S.media.kind && S.media.kind !== 'screen'"><span class="muted">{ t('now') }</span> <span id="now-title">{ S.media.title }</span></p>
+      <p class="stream-note muted small" id="stream-note" v-show="S.media.kind === 'file' && S.media.mode === 'stream'"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-info"/></svg>{ S.media.mineStream ? t('stream.noteMine') : t('stream.note', { name: S.media.streamer }) }</p>
+
+      <!-- Camera seats: small tiles under the screen, one per person with a camera on -->
+      <div class="seats" id="seats" hidden v-ignore></div>
+
+      <!-- Reactions over the screen -->
+      <div class="react-bar" role="group" :aria-label="t('react.label')">
+        <button type="button" class="react-btn" v-for="r in S.reactions" :key="r" @click="S.burst(r)" :aria-label="t('react.' + r)" :title="t('react.' + r)"><svg class="ic-react" aria-hidden="true"><use :href="'icons.svg#i-react-' + r"/></svg></button>
+      </div>
+    </section>
+
+    <aside class="side" :aria-label="t('side.label')">
+      <div class="side-tabs" role="tablist">
+        <button type="button" role="tab" class="side-tab" :class="{ 'is-active': S.tab === 'chat' }" :aria-selected="S.tab === 'chat' ? 'true' : 'false'" @click="S.setTab('chat')" id="tab-chat"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-chat"/></svg>{ t('tab.chat') }<span class="badge badge-xs badge-primary" v-show="S.unread">{ S.unread }</span></button>
+        <button type="button" role="tab" class="side-tab" :class="{ 'is-active': S.tab === 'queue' }" :aria-selected="S.tab === 'queue' ? 'true' : 'false'" @click="S.setTab('queue')" id="tab-queue"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-queue"/></svg>{ t('tab.queue') }<span class="tab-count" v-show="S.queue.length">{ S.queue.length }</span></button>
+        <button type="button" role="tab" class="side-tab" :class="{ 'is-active': S.tab === 'people' }" :aria-selected="S.tab === 'people' ? 'true' : 'false'" @click="S.setTab('people')" id="tab-people"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-users"/></svg>{ t('tab.people') }<span class="tab-count">{ S.room.count }</span></button>
+      </div>
+
+      <!-- Chat -->
+      <section class="panel chat-panel" role="tabpanel" aria-labelledby="tab-chat" v-show="S.tab === 'chat'">
+        <ol class="chat-list" id="chat-list" aria-live="polite">
+          <li class="chat-empty muted" v-if="!S.chat.length">{ t('chat.empty') }</li>
+          <li class="chat-msg" v-for="m in S.chat" :key="m.id" :class="{ mine: m.mine }" :data-id="m.id">
+            <div class="chat-head"><span class="dot" :style="{ background: m.color }" aria-hidden="true"></span><strong>{ m.name }</strong>
+              <button type="button" class="vt-chip" v-if="m.vt !== null" @click="S.seekToTime(m.vt)" :title="t('chat.timeTitle', { t: m.vtLabel })" :aria-label="t('chat.timeTitle', { t: m.vtLabel })"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-clock"/></svg>{ m.vtLabel }</button>
+              <time class="muted">{ m.time }</time>
+              <button type="button" class="icon-btn icon-btn-sm reply-btn" @click="S.replyTo(m.id)" :aria-label="t('chat.reply')" :title="t('chat.reply')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-reply"/></svg></button>
+            </div>
+            <blockquote class="chat-quote" v-if="m.reply"><strong>{ m.reply.name }</strong> { m.reply.text }</blockquote>
+            <p class="chat-text"><span v-for="p in m.parts" :key="p.i">{ p.text || '' }<button type="button" class="time-link" v-if="p.time !== undefined" @click="S.seekToTime(p.time)" :title="t('chat.timeTitle', { t: p.label })">{ p.label }</button></span></p>
+            <div class="chat-reacts">
+              <button type="button" class="chip-react" v-for="r in m.reactions" :key="r.r" :class="{ mine: r.mine }" @click="S.react(m.id, r.r)" :aria-label="t('react.' + r.r) + ' ' + r.n" :aria-pressed="r.mine ? 'true' : 'false'"><svg class="ic-react ic-react-sm" aria-hidden="true"><use :href="'icons.svg#i-react-' + r.r"/></svg>{ r.n }</button>
+              <span class="react-add">
+                <button type="button" class="chip-react ghost" v-for="r in S.reactions" :key="r" @click="S.react(m.id, r)" :aria-label="t('react.on', { r: t('react.' + r) })" :title="t('react.' + r)"><svg class="ic-react ic-react-sm" aria-hidden="true"><use :href="'icons.svg#i-react-' + r"/></svg></button>
+              </span>
+            </div>
+          </li>
+        </ol>
+        <div class="reply-bar" v-if="S.replyTo" role="status"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-reply"/></svg><span>{ t('chat.replying', { name: S.replyTo.name }) } <span class="muted">{ S.replyTo.text }</span></span><button type="button" class="icon-btn icon-btn-sm" @click="S.cancelReply()" :aria-label="t('chat.cancelReply')" :title="t('chat.cancelReply')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-close"/></svg></button></div>
+        <form class="chat-form" @submit.prevent="S.sendChat()">
+          <input class="input" id="chat-input" v-model="S.draft" maxlength="500" autocomplete="off" :placeholder="t('chat.ph')" :aria-label="t('chat.ph')">
+          <button type="submit" class="btn btn-primary btn-icon" :aria-label="t('chat.send')" :title="t('chat.send')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-send"/></svg></button>
+        </form>
+      </section>
+
+      <!-- Queue -->
+      <section class="panel queue-panel" role="tabpanel" aria-labelledby="tab-queue" v-show="S.tab === 'queue'">
+        <form class="queue-add" @submit.prevent="S.addYouTube('queue')">
+          <input class="input input-sm" id="queue-url" v-model="S.add.queue" :placeholder="t('pick.ytPh')" :aria-label="t('queue.addYt')" autocomplete="off" spellcheck="false">
+          <button type="submit" class="btn btn-sm btn-outline" id="queue-add"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-plus"/></svg>{ t('queue.add') }</button>
+        </form>
+        <button type="button" class="btn btn-sm btn-ghost queue-file" @click="S.pickFile('queue')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-file"/></svg>{ t('queue.addFile') }</button>
+        <p class="form-error" role="alert" v-show="S.add.queueError">{ S.add.queueError }</p>
+        <ol class="queue-list" id="queue-list">
+          <li class="muted queue-empty" v-if="!S.queue.length">{ t('queue.empty') }</li>
+          <li class="queue-item" v-for="(q, i) in S.queue" :key="q.id">
+            <span class="q-n">{ i + 1 }</span>
+            <span class="q-body"><span class="q-title">{ q.title }</span><span class="muted small">{ q.kind === 'yt' ? t('queue.kindYt') : t('queue.kindFile') } · { t('queue.by', { name: q.byName }) }</span></span>
+            <span class="q-tools">
+              <button type="button" class="icon-btn icon-btn-sm" @click="S.playItem(q.id)" :disabled="!S.room.canControl" :aria-label="t('queue.playNow')" :title="t('queue.playNow')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-play"/></svg></button>
+              <button type="button" class="icon-btn icon-btn-sm" @click="S.moveItem(q.id, i - 1)" :disabled="!S.room.canControl || i === 0" :aria-label="t('queue.up')" :title="t('queue.up')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-up"/></svg></button>
+              <button type="button" class="icon-btn icon-btn-sm" @click="S.moveItem(q.id, i + 1)" :disabled="!S.room.canControl || i === S.queue.length - 1" :aria-label="t('queue.down')" :title="t('queue.down')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-down"/></svg></button>
+              <button type="button" class="icon-btn icon-btn-sm" @click="S.removeItem(q.id)" :disabled="!S.room.canControl" :aria-label="t('queue.remove')" :title="t('queue.remove')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-trash"/></svg></button>
+            </span>
+          </li>
+        </ol>
+      </section>
+
+      <!-- Who is watching -->
+      <section class="panel people-panel" role="tabpanel" aria-labelledby="tab-people" v-show="S.tab === 'people'">
+        <ul class="people-list" id="people-list">
+          <li class="person" v-for="p in S.people" :key="p.id" :data-id="p.id" :class="{ speaking: p.speaking, offline: !p.online }">
+            <span class="avatar-ring" :style="{ '--c': p.color }"><span class="initials">{ p.initials }</span></span>
+            <span class="p-body">
+              <span class="p-name">{ p.name }<span class="muted" v-if="p.me"> { t('people.you') }</span>
+                <span class="host-badge" v-if="p.host" :title="t('people.host')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-crown"/></svg>{ t('people.host') }</span>
+              </span>
+              <span class="p-status muted small">{ p.statusText }</span>
+            </span>
+            <span class="p-mic" :title="p.micText"><svg class="ic" aria-hidden="true" v-show="p.mic && !p.muted"><use href="icons.svg#i-mic"/></svg><svg class="ic muted" aria-hidden="true" v-show="!p.mic || p.muted"><use href="icons.svg#i-mic-off"/></svg></span>
+          </li>
+        </ul>
+        <button type="button" class="btn btn-outline btn-block" @click="S.openInvite()" v-show="S.room.count < S.room.max"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-invite"/></svg>{ t('invite.button') }</button>
+        <p class="muted small" v-show="S.voice.error">{ S.voice.error }</p>
+      </section>
+    </aside>
+  </main>
+</div>
+
+<!-- Invite: six words and a QR code -->
+<dialog class="modal invite-modal" id="invite-modal" :open="S.invite.open" @close="S.closeInvite()" @keydown.esc="S.closeInvite()" aria-labelledby="invite-h">
+  <div class="modal-backdrop" @click="S.closeInvite()"></div>
+  <div class="modal-box">
+    <button type="button" class="icon-btn modal-x" @click="S.closeInvite()" :aria-label="t('common.close')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-close"/></svg></button>
+    <div v-if="S.invite.stage === 'making'" class="invite-wait" role="status">
+      <span class="spinner spinner-ring spinner-lg" aria-hidden="true"></span>
+      <p>{ t('invite.making') }</p>
+    </div>
+    <div v-if="S.invite.stage === 'waiting'">
+      <p class="eyebrow">{ t('invite.eyebrow') }</p>
+      <h2 id="invite-h" class="modal-title-xl">{ t('invite.title') }</h2>
+      <div class="ticket">
+        <ol class="ticket-words invite-words" :data-words="S.invite.words.join(' ')">
+          <li v-for="(w, i) in S.invite.words" :key="i"><span class="tw-n">{ i + 1 }</span><span class="tw-w">{ w }</span></li>
+        </ol>
+        <div class="ticket-qr" v-html="S.invite.qr" role="img" :aria-label="t('invite.qrAlt')"></div>
+      </div>
+      <p class="muted small">{ t('invite.how') }</p>
+      <p class="invite-status" role="status"><span class="live-dot" aria-hidden="true"></span>{ t('invite.waiting') } <span class="muted">{ S.invite.relays }</span></p>
+    </div>
+    <div v-if="S.invite.stage === 'connecting'" class="invite-wait" role="status">
+      <span class="spinner spinner-ring spinner-lg" aria-hidden="true"></span>
+      <p>{ t('invite.connecting', { name: S.invite.name }) }</p>
+    </div>
+    <form v-if="S.invite.stage === 'confirm'" class="confirm-step" @submit.prevent="S.confirmInvite()">
+      <p class="eyebrow">{ t('invite.confirmEyebrow') }</p>
+      <h2 class="modal-title-xl">{ t('invite.confirmTitle', { name: S.invite.name }) }</h2>
+      <p class="muted">{ t('invite.confirmHint', { name: S.invite.name }) }</p>
+      <div class="word-grid" data-prefix="confirm-word" :class="{ 'is-wrong': S.invite.wrong }">
+        <div class="word-cell" v-for="(w, i) in S.invite.typed" :key="i">
+          <label class="word-n" :for="'confirm-word-' + i">{ i + 1 }</label>
+          <input class="input word-field" :id="'confirm-word-' + i" type="text" list="bip39" autocomplete="off" autocapitalize="none" spellcheck="false" v-model="S.invite.typed[i]" :aria-label="t('words.n', { n: i + 1 })">
+        </div>
+      </div>
+      <p class="form-error" role="alert" v-show="S.invite.error">{ S.invite.error }</p>
+      <button type="submit" class="btn btn-primary btn-block" id="confirm-go">{ t('invite.confirm') }</button>
+    </form>
+    <div v-if="S.invite.stage === 'joined'" class="invite-wait" role="status">
+      <svg class="ic ic-xl ok" aria-hidden="true"><use href="icons.svg#i-check"/></svg>
+      <h2 class="modal-title-xl">{ t('invite.joined', { name: S.invite.name }) }</h2>
+      <div class="row-btns">
+        <button type="button" class="btn btn-primary" @click="S.openInvite()" v-show="S.room.count < S.room.max">{ t('invite.another') }</button>
+        <button type="button" class="btn btn-outline" @click="S.closeInvite()">{ t('common.done') }</button>
+      </div>
+    </div>
+    <div v-if="S.invite.stage === 'expired' || S.invite.stage === 'error' || S.invite.stage === 'full' || S.invite.stage === 'refused'" class="invite-wait" role="alert">
+      <svg class="ic ic-xl" aria-hidden="true"><use href="icons.svg#i-warning"/></svg>
+      <p>{ S.invite.error }</p>
+      <button type="button" class="btn btn-primary" @click="S.openInvite()" v-show="S.invite.stage !== 'full'">{ t('invite.again') }</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Screen share: what it can and cannot do -->
+<dialog class="modal" id="share-modal" :open="S.share.open" @keydown.esc="S.share.open = false" aria-labelledby="share-h">
+  <div class="modal-backdrop" @click="S.share.open = false"></div>
+  <div class="modal-box">
+    <button type="button" class="icon-btn modal-x" @click="S.share.open = false" :aria-label="t('common.close')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-close"/></svg></button>
+    <div class="share-art" aria-hidden="true">
+      <img class="art-dark" src="../assets/illustrations/black-screen-dark.svg" alt="" width="800" height="560">
+      <img class="art-light" src="../assets/illustrations/black-screen.svg" alt="" width="800" height="560">
+    </div>
+    <h2 id="share-h" class="modal-title-xl">{ t('share.title') }</h2>
+    <ul class="honest">
+      <li><svg class="ic" aria-hidden="true"><use href="icons.svg#i-check"/></svg>{ t('share.works') }</li>
+      <li><svg class="ic" aria-hidden="true"><use href="icons.svg#i-warning"/></svg>{ t('share.black') }</li>
+      <li><svg class="ic" aria-hidden="true"><use href="icons.svg#i-ticket"/></svg>{ t('share.subs') }</li>
+      <li><svg class="ic" aria-hidden="true"><use href="icons.svg#i-volume"/></svg>{ t('share.audio') }</li>
+    </ul>
+    <div class="row-btns">
+      <button type="button" class="btn btn-primary" id="share-go" @click="S.shareScreen()">{ t('share.go') }</button>
+      <button type="button" class="btn btn-outline" @click="S.share.open = false">{ t('common.cancel') }</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Streaming sites through the extension, in three steps -->
+<dialog class="modal ext-modal" id="ext-modal" :open="S.ext.open" @keydown.esc="S.ext.open = false" aria-labelledby="ext-h">
+  <div class="modal-backdrop" @click="S.ext.open = false"></div>
+  <div class="modal-box">
+    <button type="button" class="icon-btn modal-x" @click="S.ext.open = false" :aria-label="t('common.close')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-close"/></svg></button>
+    <p class="eyebrow">{ t('ext.eyebrow') }</p>
+    <h2 id="ext-h" class="modal-title-xl">{ t('ext.title') }</h2>
+    <p class="muted">{ t('ext.lede') }</p>
+    <ol class="steps3">
+      <li :class="{ done: S.ext.installed }">
+        <span class="step-n" aria-hidden="true">1</span>
+        <div>
+          <strong>{ t('ext.s1') }</strong>
+          <p class="muted small">{ t('ext.s1d') }</p>
+          <div class="step-row"><a class="btn btn-sm btn-outline" id="ext-download" href="../#extension" target="_blank" rel="noopener">{ t('ext.download') }</a><span class="ok-tag" v-show="S.ext.installed"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-check"/></svg>{ t('ext.installed') }</span></div>
+        </div>
+      </li>
+      <li :class="{ done: S.ext.found }">
+        <span class="step-n" aria-hidden="true">2</span>
+        <div><strong>{ t('ext.s2') }</strong><p class="muted small">{ t('ext.s2d') }</p></div>
+      </li>
+      <li :class="{ done: S.ext.found }">
+        <span class="step-n" aria-hidden="true">3</span>
+        <div>
+          <strong>{ t('ext.s3') }</strong>
+          <p class="muted small">{ t('ext.s3d') }</p>
+          <span class="ok-tag" v-show="S.ext.found"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-check"/></svg>{ t('ext.found', { site: S.ext.site }) }</span>
+        </div>
+      </li>
+    </ol>
+    <ul class="honest">
+      <li><svg class="ic" aria-hidden="true"><use href="icons.svg#i-ticket"/></svg>{ t('share.subs') }</li>
+      <li><svg class="ic" aria-hidden="true"><use href="icons.svg#i-shield"/></svg>{ t('ext.never') }</li>
+      <li><svg class="ic" aria-hidden="true"><use href="icons.svg#i-info"/></svg>{ t('ext.limits') }</li>
+    </ul>
+    <div class="row-btns">
+      <button type="button" class="btn btn-primary" id="ext-go" @click="S.startExt()" :disabled="!S.room.canControl" v-show="S.media.kind !== 'ext'">{ t('ext.go') }</button>
+      <button type="button" class="btn btn-outline" @click="S.ext.open = false">{ S.media.kind === 'ext' ? t('common.close') : t('common.cancel') }</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Settings -->
+<dialog class="modal" id="settings-modal" :open="S.settings.open" @keydown.esc="S.settings.open = false" aria-labelledby="settings-h">
+  <div class="modal-backdrop" @click="S.settings.open = false"></div>
+  <div class="modal-box">
+    <button type="button" class="icon-btn modal-x" @click="S.settings.open = false" :aria-label="t('common.close')"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-close"/></svg></button>
+    <h2 id="settings-h" class="modal-title-xl">{ t('settings.title') }</h2>
+    <div class="set-row">
+      <span>{ t('settings.lang') }</span>
+      <div class="segmented segmented-sm" role="group" :aria-label="t('settings.lang')">
+        <button type="button" class="segmented-item" :aria-pressed="S.lang === 'en' ? 'true' : 'false'" @click="S.setLang('en')">English</button>
+        <button type="button" class="segmented-item" :aria-pressed="S.lang === 'pt' ? 'true' : 'false'" @click="S.setLang('pt')">Português</button>
+      </div>
+    </div>
+    <div class="set-row">
+      <span>{ t('settings.theme') }</span>
+      <div class="segmented segmented-sm" role="group" :aria-label="t('settings.theme')">
+        <button type="button" class="segmented-item" v-theme-toggle:dark>{ t('settings.dark') }</button>
+        <button type="button" class="segmented-item" v-theme-toggle:light>{ t('settings.light') }</button>
+      </div>
+    </div>
+    <h3 class="set-h">{ t('settings.voice') }</h3>
+    <div class="set-row">
+      <span>{ t('settings.noise') }</span>
+      <div class="segmented segmented-sm" role="group" :aria-label="t('settings.noise')" id="noise-mode">
+        <button type="button" class="segmented-item" :aria-pressed="S.voice.noise === 'off' ? 'true' : 'false'" @click="S.setNoise('off')">{ t('noise.off') }</button>
+        <button type="button" class="segmented-item" :aria-pressed="S.voice.noise === 'browser' ? 'true' : 'false'" @click="S.setNoise('browser')">{ t('noise.browser') }</button>
+        <button type="button" class="segmented-item" :aria-pressed="S.voice.noise === 'strong' ? 'true' : 'false'" @click="S.setNoise('strong')">{ t('noise.strong') }</button>
+      </div>
+    </div>
+    <p class="muted small">{ t('noise.hint') }</p>
+    <label class="set-row set-check" for="duck"><span>{ t('settings.duck') }<span class="muted small set-sub">{ t('settings.duckHint') }</span></span><input type="checkbox" class="toggle" id="duck" :checked="S.voice.duck" @change="S.setDuck($event.target.checked)"></label>
+    <h3 class="set-h">{ t('settings.network') }</h3>
+    <ul class="stun-list">
+      <li v-for="s in S.settings.stun" :key="s.url"><span class="dot" :class="s.ok === true ? 'ok' : s.ok === false ? 'bad' : ''" aria-hidden="true"></span><code>{ s.url }</code><span class="muted small">{ s.ok === true ? t('stun.ok') : s.ok === false ? t('stun.bad') : t('stun.checking') }</span></li>
+    </ul>
+    <p class="muted small">{ t('settings.stunNote') }</p>
+    <form class="turn-form" @submit.prevent="S.saveTurn()">
+      <label class="field-label" for="turn-url">{ t('settings.turn') }</label>
+      <input id="turn-url" class="input input-sm" v-model="S.settings.turnUrls" placeholder="turn:turn.example.com:3478" autocomplete="off" spellcheck="false">
+      <div class="turn-row">
+        <input class="input input-sm" v-model="S.settings.turnUser" :placeholder="t('settings.user')" :aria-label="t('settings.user')" autocomplete="off">
+        <input class="input input-sm" type="password" v-model="S.settings.turnPass" :placeholder="t('settings.pass')" :aria-label="t('settings.pass')" autocomplete="new-password">
+      </div>
+      <p class="form-error" role="alert" v-show="S.settings.turnError">{ S.settings.turnError }</p>
+      <p class="muted small" v-show="S.settings.turnSaved">{ t('settings.saved') }</p>
+      <div class="row-btns"><button type="submit" class="btn btn-sm btn-outline">{ t('settings.save') }</button><button type="button" class="btn btn-sm btn-ghost" @click="S.clearTurn()">{ t('settings.clear') }</button></div>
+    </form>
+    <details class="advanced">
+      <summary>{ t('settings.relays') }</summary>
+      <p class="muted small">{ t('settings.relaysNote') }</p>
+      <textarea class="textarea textarea-sm" id="brokers" rows="3" v-model="S.settings.brokers" placeholder="wss://broker.example.com:8084/mqtt" spellcheck="false"></textarea>
+      <div class="row-btns"><button type="button" class="btn btn-sm btn-outline" id="save-brokers" @click="S.saveBrokers()">{ t('settings.save') }</button></div>
+    </details>
+    <p class="muted small version">popcornpals { S.version }</p>
+  </div>
+</dialog>
+
+<div class="toast-stack toast-bottom toast-center pp-toasts" aria-live="polite">
+  <div class="toast-item pp-toast" v-for="x in S.toasts" :key="x.id" :class="'is-' + x.kind">{ x.text }</div>
+</div>
+
+<input type="file" id="file-input" accept="video/*,audio/*,.mkv,.webm,.mp4,.m4v,.mov" hidden>
+<input type="file" id="subs-input" accept=".srt,.vtt,text/vtt" hidden>
+<div id="audio-sink" hidden v-ignore></div>
+<datalist id="bip39"></datalist>
+<noscript><p class="noscript">popcornpals needs JavaScript: everything runs in your browser.</p></noscript>
+</body>
+</html>

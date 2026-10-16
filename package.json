@@ -36,7 +36,11 @@
     "video": "node scripts/make-test-video.mjs",
     "e2e": "node test/e2e.mjs",
     "qa": "node scripts/qa.mjs",
-    "serve": "node scripts/serve.mjs"
+    "serve": "node scripts/serve.mjs",
+    "extension": "node scripts/build-extension.mjs",
+    "extension:check": "node scripts/build-extension.mjs --check",
+    "e2e:ext": "node test/e2e-extension.mjs",
+    "art": "node scripts/render-art.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

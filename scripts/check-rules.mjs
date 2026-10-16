@@ -20,9 +20,9 @@ const brands = [
 const rules = [
   [new RegExp(`[${String.fromCharCode(0x2013, 0x2014)}]`), 'an en or em dash'],
   [/\p{Extended_Pictographic}/u, 'an emoji'],
-  [new RegExp(`\b(${brands.join('|')})\b`, 'i'), 'the name of another product'],
-  [new RegExp(`\b(${w('Clau', 'de')}|${w('Anthro', 'pic')}|${w('Chat', 'GPT')}|${w('Co', 'pilot')}|${w('Open', 'A', 'I')}|${w('Gem', 'ini')})\b`, 'i'), 'a mention of an assistant'],
-  [new RegExp(`\b${w('A', 'I')}\b`), 'a mention of generated code'],
+  [new RegExp(String.raw`\b(${brands.join('|')})\b`, 'i'), 'the name of another product'],
+  [new RegExp(String.raw`\b(${w('Clau', 'de')}|${w('Anthro', 'pic')}|${w('Chat', 'GPT')}|${w('Co', 'pilot')}|${w('Open', 'A', 'I')}|${w('Gem', 'ini')})\b`, 'i'), 'a mention of an assistant'],
+  [new RegExp(String.raw`\b${w('A', 'I')}\b`), 'a mention of generated code'],
 ];
 
 const problems = [];

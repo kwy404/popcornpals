@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { ClockSync, EchoGuard, SYNC, applyIntent, cleanSource, correction, hasEnded, initialState, isNewer, joinView, positionAt, snapRate, takeOver } from '../src/sync.js';
+import { ClockSync, EchoGuard, SYNC, applyIntent, pressIntent, cleanSource, correction, hasEnded, initialState, isNewer, joinView, positionAt, snapRate, takeOver } from '../src/sync.js';
 import { YT_RATES } from '../src/youtube.js';
 
 const HASH = 'a'.repeat(32);
-const FILE = { kind: 'file', hash: HASH, size: 1000, name: 'movie.webm', duration: 120 };
+const FILE = { kind: 'file', mode: 'local', hash: HASH, size: 1000, name: 'movie.webm', duration: 120 };
+const STREAM = { kind: 'file', mode: 'stream', id: 'ana', hash: HASH, size: 1000, name: 'movie.webm', duration: 120 };
 const YT = { kind: 'yt', id: 'abcdefghijk', title: 'A video' };
 
 /** A host state with a file loaded, built through intents like the app does. */
@@ -235,6 +236,21 @@ describe('conflict rules: two people press at once', () => {
     expect({ ...first, by: null }).toEqual({ ...other, by: null });
   });
 
+  it('reads a press right after someone else flipped the state as aimed at the old state', () => {
+    // Ana's pause reached Bia 50 ms before Bia pressed: Bia was pressing pause too.
+    const s = playing();
+    const paused = applyIntent(s, { action: 'pause', by: 'ana', base: 2 }, { now: 4000 }).state;
+    const flip = { at: 4000, playing: true, seq: 2 };
+    const press = pressIntent(paused, flip, 4050);
+    expect(press).toEqual({ action: 'pause', base: 2 });
+    expect(applyIntent(paused, { ...press, by: 'bia' }, { now: 4080 }).result).toBe('duplicate');
+    // A second later it is a real decision: play.
+    const later = pressIntent(paused, flip, 5200);
+    expect(later).toEqual({ action: 'play', base: 3 });
+    expect(applyIntent(paused, { ...later, by: 'bia' }, { now: 5220 }).result).toBe('applied');
+    expect(pressIntent(paused, null, 4050)).toEqual({ action: 'play', base: 3 });
+  });
+
   it('applies a late intent once the window is over: it is a new decision', () => {
     const s = playing();
     const pause = applyIntent(s, { action: 'pause', by: 'ana', base: 2 }, { now: 4000 });
@@ -279,6 +295,7 @@ describe('queue', () => {
     s = applyIntent(s, { action: 'queue-add', by: 'a', item: { id: 'x', src: YT } }, { now: 1 }).state;
     expect(applyIntent(s, { action: 'queue-add', by: 'a', item: { id: 'x', src: YT } }, { now: 1 }).result).toBe('invalid');
     expect(applyIntent(s, { action: 'queue-add', by: 'a', item: { id: 'y', src: { kind: 'screen', id: 'abc' } } }, { now: 1 }).result).toBe('invalid');
+    expect(applyIntent(s, { action: 'queue-add', by: 'a', item: { id: 'z', src: { kind: 'ext', id: 'abc' } } }, { now: 1 }).result).toBe('invalid');
     expect(applyIntent(s, { action: 'queue-add', by: 'a', item: { id: 'no spaces', src: YT } }, { now: 1 }).result).toBe('invalid');
     for (let i = 0; i < SYNC.MAX_QUEUE; i++) s = applyIntent(s, { action: 'queue-add', by: 'a', item: { id: `i${i}`, src: YT } }, { now: 1 }).state;
     expect(s.queue).toHaveLength(SYNC.MAX_QUEUE);
@@ -306,12 +323,15 @@ describe('late joiner state', () => {
     expect(view.needs).toBe('nothing');
   });
 
-  it('says what the joiner must do first: pick the same file, load YouTube, or wait for the screen', () => {
+  it('says what the joiner must do first: pick the same file, load YouTube, receive a stream or wait for the screen', () => {
     const s = loaded();
     expect(joinView(null, s, 0).needs).toBe('file');
     expect(joinView(null, s, 0, { fileHash: 'b'.repeat(32) }).needs).toBe('file');
     expect(joinView(null, { ...s, src: YT }, 0).needs).toBe('youtube');
+    // when one person streams the file, nobody else needs it
+    expect(joinView(null, { ...s, src: STREAM }, 0, { fileHash: null }).needs).toBe('stream');
     expect(joinView(null, { ...s, src: { kind: 'screen', id: 'x' } }, 0).needs).toBe('screen');
+    expect(joinView(null, { ...s, src: { kind: 'ext', id: 'x' } }, 0).needs).toBe('extension');
     expect(joinView(null, initialState(), 0).needs).toBe('nothing');
   });
 
@@ -339,8 +359,14 @@ describe('late joiner state', () => {
 describe('cleanSource', () => {
   it('accepts YouTube ids, file fingerprints and screen shares, and nothing else', () => {
     expect(cleanSource(YT)).toMatchObject({ kind: 'yt', id: 'abcdefghijk' });
-    expect(cleanSource(FILE)).toMatchObject({ kind: 'file', title: 'movie.webm', duration: 120 });
+    expect(cleanSource(FILE)).toMatchObject({ kind: 'file', mode: 'local', title: 'movie.webm', duration: 120 });
+    expect(cleanSource(STREAM)).toMatchObject({ kind: 'file', mode: 'stream', id: 'ana' });
+    expect(cleanSource({ ...STREAM, mode: undefined })).toMatchObject({ mode: 'stream', id: 'ana' });
+    expect(cleanSource({ ...STREAM, id: '' })).toBeNull();
+    expect(cleanSource({ ...FILE, id: 'x' }).id).toBeUndefined();
     expect(cleanSource({ kind: 'screen', id: 'abc' })).toMatchObject({ kind: 'screen' });
+    expect(cleanSource({ kind: 'ext', id: 'abc123', title: 'A site' })).toMatchObject({ kind: 'ext', id: 'abc123' });
+    expect(cleanSource({ kind: 'ext', id: '<script>' })).toBeNull();
     expect(cleanSource({ kind: 'yt', id: 'short' })).toBeNull();
     expect(cleanSource({ kind: 'url', url: 'https://example.com/v.mp4' })).toBeNull();
     expect(cleanSource(null)).toBeNull();

@@ -113,7 +113,7 @@ export class RtcLink {
     };
   }
 
-  /** The media slot ('mic', 'screen' or 'screen-audio') a remote stream id belongs to. */
+  /** The media slot ('mic', 'camera', 'screen', 'screen-audio', 'movie' or 'movie-audio') a remote stream id belongs to. */
   slotOf(streamId) {
     for (const [slot, id] of Object.entries(this.remoteMedia)) if (id === streamId) return slot;
     return null;
@@ -294,6 +294,17 @@ export class RtcLink {
       if (s.type === 'outbound-rtp') out[s.kind === 'audio' ? 'audioOut' : 'videoOut'] += s.bytesSent || 0;
     });
     return out;
+  }
+
+  /** The upload the connection estimates it can use right now, in bits per second, or null. */
+  async uploadEstimate() {
+    if (this.closed) return null;
+    const report = await this.pc.getStats();
+    let best = null;
+    report.forEach((s) => {
+      if (s.type === 'candidate-pair' && s.nominated && Number.isFinite(s.availableOutgoingBitrate)) best = Math.max(best ?? 0, s.availableOutgoingBitrate);
+    });
+    return best;
   }
 
   diagnose(online) {

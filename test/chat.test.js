@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_MESSAGES, MAX_TEXT, RateLimit, addMessage, cleanMessage, cleanText, toggleReaction } from '../src/chat.js';
+import { MAX_MESSAGES, MAX_TEXT, RateLimit, addMessage, cleanMessage, cleanText, formatTime, splitTimes, toggleReaction } from '../src/chat.js';
 import { cleanName, colorFor, initials } from '../src/people.js';
 
 describe('chat', () => {
@@ -9,6 +9,23 @@ describe('chat', () => {
     expect(cleanMessage({ id: 'abcd1234', text: '   ' }, 'a')).toBeNull();
     expect(cleanMessage({ id: '<b>', text: 'hi' }, 'a')).toBeNull();
     expect(cleanMessage({ id: 'abcd1234', text: 'hi', ts: 5 }, 'a')).toEqual({ id: 'abcd1234', from: 'a', text: 'hi', ts: 5, reactions: {} });
+  });
+
+  it('keeps replies and the video time, and drops bad ones', () => {
+    expect(cleanMessage({ id: 'abcd1234', text: 'hi', re: 'zzzz9999', vt: 61.27 }, 'a')).toMatchObject({ re: 'zzzz9999', vt: 61.3 });
+    const bad = cleanMessage({ id: 'abcd1234', text: 'hi', re: '<x>', vt: -1 }, 'a');
+    expect(bad.re).toBeUndefined();
+    expect(bad.vt).toBeUndefined();
+    expect(cleanMessage({ id: 'abcd1234', text: 'hi', re: 'abcd1234' }, 'a').re).toBeUndefined();
+  });
+
+  it('turns written times into video links', () => {
+    expect(splitTimes('look at 1:02:05 and 12:34!')).toEqual([{ text: 'look at ' }, { time: 3725, label: '1:02:05' }, { text: ' and ' }, { time: 754, label: '12:34' }, { text: '!' }]);
+    expect(splitTimes('0:07')).toEqual([{ time: 7, label: '0:07' }]);
+    expect(splitTimes('not 12:75, not 1:2, not 10:20:30:40')).toEqual([{ text: 'not 12:75, not 1:2, not 10:20:30:40' }]);
+    expect(splitTimes('plain')).toEqual([{ text: 'plain' }]);
+    expect(formatTime(75)).toBe('1:15');
+    expect(formatTime(3725)).toBe('1:02:05');
   });
 
   it('toggles reactions per person and drops empty ones', () => {

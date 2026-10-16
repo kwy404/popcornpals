@@ -30,6 +30,8 @@ jobs:
 
       - run: npm run core:check
 
+      - run: npm run extension:check
+
       - run: npm test
 
       - run: npm run links
@@ -47,6 +49,12 @@ jobs:
 
       - run: npm ci
 
+      - run: npx playwright-core install chromium
+
       - run: npm run e2e
         env:
           BROWSER: /usr/bin/google-chrome
+
+      - run: npm run e2e:ext
+        env:
+          EXT_BROWSER: playwright
